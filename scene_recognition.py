@@ -60,7 +60,7 @@ def compute_dsift(img):
 
 
 def get_tiny_image(img, output_size):
-    feature = cv2.resize(img, output_size)
+    feature = cv2.resize(img, output_size, interpolation=cv2.INTER_AREA)
     # cv2.imshow('tiny_image', feature)
     # cv2.waitKey(5000)
     feature = feature.reshape(-1)
@@ -80,7 +80,7 @@ def predict_knn(feature_train, label_train, feature_test, k):
 
 def classify_knn_tiny(class_labels, train_labels, train_images, true_test_labels, test_images):
     TINY_FEATURE_SIZE = (16, 16)
-    K_IN_KNN = 7
+    K_IN_KNN = 6
     # Create train features
     feature_train = []
     for img_file in train_images:
@@ -138,9 +138,8 @@ if __name__ == '__main__':
     label_classes, label_train_list, img_train_list, label_test_list, img_test_list \
         = extract_dataset_info("./scene_classification_data")
 
-    _, accuracy \
-        = classify_knn_tiny(label_classes, label_train_list, img_train_list, label_test_list, img_test_list)
-
+    _, accuracy = classify_knn_tiny(label_classes, label_train_list, img_train_list, label_test_list, img_test_list)
+    exit(-1)
     classify_knn_bow(label_classes, label_train_list, img_train_list, label_test_list, img_test_list)
 
     classify_svm_bow(label_classes, label_train_list, img_train_list, label_test_list, img_test_list)
