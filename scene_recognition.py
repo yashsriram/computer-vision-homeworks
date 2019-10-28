@@ -2,7 +2,8 @@ import os
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
-from sklearn.neighbors import NearestNeighbors
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import confusion_matrix, accuracy_score
 from sklearn.cluster import KMeans
 from sklearn.svm import LinearSVC
 from scipy import stats
@@ -37,54 +38,6 @@ def extract_dataset_info(data_path):
     return label_classes, label_train_list, img_train_list, label_test_list, img_test_list
 
 
-def compute_dsift(img):
-    # To do
-    return dense_feature
-
-
-def get_tiny_image(img, output_size):
-    # To do
-    return feature
-
-
-def predict_knn(feature_train, label_train, feature_test, k):
-    # To do
-    return label_test_pred
-
-
-def classify_knn_tiny(label_classes, label_train_list, img_train_list, label_test_list, img_test_list):
-    # To do
-    visualize_confusion_matrix(confusion, accuracy, label_classes)
-    return confusion, accuracy
-
-
-def build_visual_dictionary(dense_feature_list, dic_size):
-    # To do
-    return vocab
-
-
-def compute_bow(feature, vocab):
-    # To do
-    return bow_feature
-
-
-def classify_knn_bow(label_classes, label_train_list, img_train_list, label_test_list, img_test_list):
-    # To do
-    visualize_confusion_matrix(confusion, accuracy, label_classes)
-    return confusion, accuracy
-
-
-def predict_svm(feature_train, label_train, feature_test, n_classes):
-    # To do
-    return label_test_pred
-
-
-def classify_svm_bow(label_classes, label_train_list, img_train_list, label_test_list, img_test_list):
-    # To do
-    visualize_confusion_matrix(confusion, accuracy, label_classes)
-    return confusion, accuracy
-
-
 def visualize_confusion_matrix(confusion, accuracy, label_classes):
     plt.title("accuracy = {:.3f}".format(accuracy))
     plt.imshow(confusion)
@@ -101,19 +54,92 @@ def visualize_confusion_matrix(confusion, accuracy, label_classes):
     plt.show()
 
 
+def compute_dsift(img):
+    # To do
+    return dense_feature
+
+
+def get_tiny_image(img, output_size):
+    feature = cv2.resize(img, output_size)
+    # cv2.imshow('tiny_image', feature)
+    # cv2.waitKey(5000)
+    feature = feature.reshape(-1)
+    norm = np.linalg.norm(feature)
+    feature = feature / norm
+    mean = np.mean(feature)
+    feature = feature - mean
+    return feature
+
+
+def predict_knn(feature_train, label_train, feature_test, k):
+    neigh = KNeighborsClassifier(n_neighbors=k)
+    neigh.fit(feature_train, label_train)
+    test_labels = neigh.predict(feature_test)
+    return test_labels
+
+
+def classify_knn_tiny(class_labels, train_labels, train_images, true_test_labels, test_images):
+    TINY_FEATURE_SIZE = (16, 16)
+    K_IN_KNN = 7
+    # Create train features
+    feature_train = []
+    for img_file in train_images:
+        img = cv2.imread(img_file, 0)
+        tiny_img = get_tiny_image(img, TINY_FEATURE_SIZE)
+        feature_train.append(tiny_img)
+    feature_train = np.asarray(feature_train)
+
+    # Create test features
+    feature_test = []
+    for img_file in test_images:
+        img = cv2.imread(img_file, 0)
+        tiny_img = get_tiny_image(img, TINY_FEATURE_SIZE)
+        feature_test.append(tiny_img)
+    feature_test = np.asarray(feature_test)
+
+    predicted_test_labels = predict_knn(feature_train, train_labels, feature_test, K_IN_KNN)
+    confusion = confusion_matrix(true_test_labels, predicted_test_labels)
+    accuracy = accuracy_score(true_test_labels, predicted_test_labels)
+    print('TINY+KNN : tiny_size: {} kNN\'s k: {} accuracy: {}'.format(TINY_FEATURE_SIZE, K_IN_KNN, accuracy))
+
+    visualize_confusion_matrix(confusion, accuracy, class_labels)
+    return confusion, accuracy
+
+
+def build_visual_dictionary(dense_feature_list, dic_size):
+    # To do
+    return vocab
+
+
+def compute_bow(feature, vocab):
+    # To do
+    return bow_feature
+
+
+def classify_knn_bow(class_labels, train_labels, train_images, true_test_labels, test_images):
+    # To do
+    visualize_confusion_matrix(confusion, accuracy, class_labels)
+    return confusion, accuracy
+
+
+def predict_svm(feature_train, label_train, feature_test, n_classes):
+    # To do
+    return label_test_pred
+
+
+def classify_svm_bow(class_labels, train_labels, train_images, true_test_labels, test_images):
+    # To do
+    visualize_confusion_matrix(confusion, accuracy, class_labels)
+    return confusion, accuracy
+
+
 if __name__ == '__main__':
     # To do: replace with your dataset path
-    label_classes, \
-    label_train_list, img_train_list, \
-    label_test_list, img_test_list = extract_dataset_info("./scene_classification_data")
-    print(label_classes)
-    print(label_train_list)
-    print(img_train_list)
-    print(label_test_list)
-    print(img_test_list)
-    exit(-1)
+    label_classes, label_train_list, img_train_list, label_test_list, img_test_list \
+        = extract_dataset_info("./scene_classification_data")
 
-    classify_knn_tiny(label_classes, label_train_list, img_train_list, label_test_list, img_test_list)
+    _, accuracy \
+        = classify_knn_tiny(label_classes, label_train_list, img_train_list, label_test_list, img_test_list)
 
     classify_knn_bow(label_classes, label_train_list, img_train_list, label_test_list, img_test_list)
 
