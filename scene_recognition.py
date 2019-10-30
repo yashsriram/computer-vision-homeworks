@@ -111,9 +111,9 @@ def classify_knn_tiny(class_labels, train_labels, train_images, true_test_labels
 
     train_labels_encoded = []
     for train_label in train_labels:
-        train_labels_encoded.append(class_labels.index(train_label))
+        train_labels_encoded.append(class_labels.index(train_label) + 1)
     predicted_test_labels_encoded = predict_knn(feature_train, train_labels_encoded, feature_test, K_IN_KNN)
-    predicted_test_labels = [class_labels[encoded_label] for encoded_label in predicted_test_labels_encoded]
+    predicted_test_labels = [class_labels[encoded_label - 1] for encoded_label in predicted_test_labels_encoded]
     confusion = confusion_matrix(true_test_labels, predicted_test_labels)
     accuracy = accuracy_score(true_test_labels, predicted_test_labels)
     print('TINY+KNN : tiny_size: {} kNN\'s k: {} accuracy: {}'.format(TINY_FEATURE_SIZE, K_IN_KNN, accuracy))
@@ -190,9 +190,9 @@ def classify_knn_bow(class_labels, train_labels, train_images, true_test_labels,
 
     train_labels_encoded = []
     for train_label in train_labels:
-        train_labels_encoded.append(class_labels.index(train_label))
+        train_labels_encoded.append(class_labels.index(train_label) + 1)
     predicted_test_labels_encoded = predict_knn(train_bows, train_labels_encoded, test_bows, KNN_K)
-    predicted_test_labels = [class_labels[encoded_label] for encoded_label in predicted_test_labels_encoded]
+    predicted_test_labels = [class_labels[encoded_label - 1] for encoded_label in predicted_test_labels_encoded]
     confusion = confusion_matrix(true_test_labels, predicted_test_labels)
     accuracy = accuracy_score(true_test_labels, predicted_test_labels)
     print('BOW+KNN : kNN\'s k: {} accuracy: {}'.format(KNN_K, accuracy))
@@ -202,14 +202,79 @@ def classify_knn_bow(class_labels, train_labels, train_images, true_test_labels,
 
 
 def predict_svm(feature_train, label_train, feature_test, n_classes):
-    models = [LinearSVC(random_state=0, tol=1e-5, C=1.0) for _ in label_train]
-    for model in enumerate(models):
-        model.fit(feature_train, [])
-    return label_test_pred
+    models = [LinearSVC(random_state=0, tol=1e-5, C=1.0) for _ in range(n_classes)]
+    for i, model in enumerate(models):
+        binary_labels = []
+        for label in label_train:
+            if i + 1 == label:
+                binary_labels.append(1)
+            else:
+                binary_labels.append(0)
+        model.fit(feature_train, binary_labels)
+
+    # predict all feature test samples for all models
+    across_model_predictions = []
+    for i, model in enumerate(models):
+        across_model_predictions.append(model.predict(feature_test))
+    across_model_predictions = np.asarray(across_model_predictions)
+
+    # choose the class of corresponding model that gives highest probability
+    predicted_test_labels = []
+    for i, test_sample in enumerate(feature_test):
+        predicted_class = across_model_predictions[:, i].argmax() + 1
+        predicted_test_labels.append(predicted_class)
+
+    predicted_test_labels = np.asarray(predicted_test_labels)
+    return predicted_test_labels
 
 
 def classify_svm_bow(class_labels, train_labels, train_images, true_test_labels, test_images):
-    # To do
+    STRIDE = 32
+    SHAPE = 32
+    DIC_SIZE = 50
+    print('In dense sift calculation, using stride: {} shape: {}'.format(STRIDE, SHAPE))
+    # Calculating train dense features
+    train_dense_feature_list = []
+    for i, train_image_file in enumerate(train_images):
+        print('Computing dense sift for train images {}/{}\r'.format(i + 1, len(train_images)), end='')
+        train_image = cv2.imread(train_image_file, 0)
+        dense_feature = compute_dsift(train_image, STRIDE, SHAPE)
+        train_dense_feature_list.append(dense_feature)
+    print()
+
+    # Calculating vocabulary
+    vocab = build_visual_dictionary(train_dense_feature_list, DIC_SIZE)
+    np.savetxt('vocab.txt', vocab)
+    # vocab = np.loadtxt('vocab.txt')
+    print('Vocab created with shape {}'.format(vocab.shape))
+
+    # Calculating train bow features
+    train_bows = []
+    for i, dense_feature in enumerate(train_dense_feature_list):
+        print('Computing BOW for train images {}/{}\r'.format(i + 1, len(train_images)), end='')
+        train_bows.append(compute_bow(dense_feature, vocab))
+    print()
+    train_bows = np.asarray(train_bows)
+
+    # Calculating test bow features
+    test_bows = []
+    for i, test_image_file in enumerate(test_images):
+        print('Computing BOW for test images {}/{}\r'.format(i + 1, len(test_images)), end='')
+        test_image = cv2.imread(test_image_file, 0)
+        dense_feature = compute_dsift(test_image, STRIDE, SHAPE)
+        test_bows.append(compute_bow(dense_feature, vocab))
+    print()
+    test_bows = np.asarray(test_bows)
+
+    train_labels_encoded = []
+    for train_label in train_labels:
+        train_labels_encoded.append(class_labels.index(train_label) + 1)
+    predicted_test_labels_encoded = predict_svm(train_bows, train_labels_encoded, test_bows, len(class_labels))
+    predicted_test_labels = [class_labels[encoded_label - 1] for encoded_label in predicted_test_labels_encoded]
+    confusion = confusion_matrix(true_test_labels, predicted_test_labels)
+    accuracy = accuracy_score(true_test_labels, predicted_test_labels)
+    print('BOW+SVC : accuracy: {}'.format(accuracy))
+
     visualize_confusion_matrix(confusion, accuracy, class_labels)
     return confusion, accuracy
 
@@ -219,8 +284,8 @@ if __name__ == '__main__':
     label_classes, label_train_list, img_train_list, label_test_list, img_test_list \
         = extract_dataset_info("./scene_classification_data")
 
-    classify_knn_tiny(label_classes, label_train_list, img_train_list, label_test_list, img_test_list)
+    # classify_knn_tiny(label_classes, label_train_list, img_train_list, label_test_list, img_test_list)
 
-    classify_knn_bow(label_classes, label_train_list, img_train_list, label_test_list, img_test_list)
+    # classify_knn_bow(label_classes, label_train_list, img_train_list, label_test_list, img_test_list)
 
     classify_svm_bow(label_classes, label_train_list, img_train_list, label_test_list, img_test_list)
