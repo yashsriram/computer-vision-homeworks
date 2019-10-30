@@ -1,2 +1,2 @@
-* Doubts
-    * Can we use cv.imread(), cv.resize() ?
+- [ ] Can we use cv.imread(), cv.resize() ?   
+- [ ] remove n_jobs from Kmeans
