@@ -68,8 +68,7 @@ def compute_dsift(img, stride, size):
                 [cv2.KeyPoint(x=j * stride + size, y=i * stride + size, _size=size)]
             )
             for descriptor in patch_descriptors:
-                if np.sum(descriptor) != 0:
-                    dense_feature.append(descriptor.reshape(-1))
+                dense_feature.append(descriptor.reshape(-1))
     dense_feature = np.array(dense_feature)
     return dense_feature
 
@@ -151,15 +150,13 @@ def classify_knn_bow(class_labels, train_labels, train_images, true_test_labels,
     SHAPE = 32
     DIC_SIZE = 50
     print('In dense sift calculation, using stride: {} shape: {}'.format(STRIDE, SHAPE))
-    KNN_K = 10
+    KNN_K = 8
     # Calculating train dense features
     train_dense_feature_list = []
     for i, train_image_file in enumerate(train_images):
         print('Computing dense sift for train images {}/{}\r'.format(i + 1, len(train_images)), end='')
         train_image = cv2.imread(train_image_file, 0)
         dense_feature = compute_dsift(train_image, STRIDE, SHAPE)
-        if np.sum(dense_feature) == 0:
-            dense_feature = np.zeros((1, 128))
         train_dense_feature_list.append(dense_feature)
     print()
 
@@ -183,8 +180,6 @@ def classify_knn_bow(class_labels, train_labels, train_images, true_test_labels,
         print('Computing BOW for test images {}/{}\r'.format(i + 1, len(test_images)), end='')
         test_image = cv2.imread(test_image_file, 0)
         dense_feature = compute_dsift(test_image, STRIDE, SHAPE)
-        if np.sum(dense_feature) == 0:
-            dense_feature = np.zeros((1, 128))
         test_bows.append(compute_bow(dense_feature, vocab))
     print()
     test_bows = np.asarray(test_bows)
