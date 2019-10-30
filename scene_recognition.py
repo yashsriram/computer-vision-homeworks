@@ -109,7 +109,11 @@ def classify_knn_tiny(class_labels, train_labels, train_images, true_test_labels
         feature_test.append(tiny_img)
     feature_test = np.asarray(feature_test)
 
-    predicted_test_labels = predict_knn(feature_train, train_labels, feature_test, K_IN_KNN)
+    train_labels_encoded = []
+    for train_label in train_labels:
+        train_labels_encoded.append(class_labels.index(train_label))
+    predicted_test_labels_encoded = predict_knn(feature_train, train_labels_encoded, feature_test, K_IN_KNN)
+    predicted_test_labels = [class_labels[encoded_label] for encoded_label in predicted_test_labels_encoded]
     confusion = confusion_matrix(true_test_labels, predicted_test_labels)
     accuracy = accuracy_score(true_test_labels, predicted_test_labels)
     print('TINY+KNN : tiny_size: {} kNN\'s k: {} accuracy: {}'.format(TINY_FEATURE_SIZE, K_IN_KNN, accuracy))
@@ -184,7 +188,11 @@ def classify_knn_bow(class_labels, train_labels, train_images, true_test_labels,
     print()
     test_bows = np.asarray(test_bows)
 
-    predicted_test_labels = predict_knn(train_bows, train_labels, test_bows, KNN_K)
+    train_labels_encoded = []
+    for train_label in train_labels:
+        train_labels_encoded.append(class_labels.index(train_label))
+    predicted_test_labels_encoded = predict_knn(train_bows, train_labels_encoded, test_bows, KNN_K)
+    predicted_test_labels = [class_labels[encoded_label] for encoded_label in predicted_test_labels_encoded]
     confusion = confusion_matrix(true_test_labels, predicted_test_labels)
     accuracy = accuracy_score(true_test_labels, predicted_test_labels)
     print('BOW+KNN : kNN\'s k: {} accuracy: {}'.format(KNN_K, accuracy))
@@ -194,7 +202,9 @@ def classify_knn_bow(class_labels, train_labels, train_images, true_test_labels,
 
 
 def predict_svm(feature_train, label_train, feature_test, n_classes):
-    # To do
+    models = [LinearSVC(random_state=0, tol=1e-5, C=1.0) for _ in label_train]
+    for model in enumerate(models):
+        model.fit(feature_train, [])
     return label_test_pred
 
 
@@ -209,9 +219,8 @@ if __name__ == '__main__':
     label_classes, label_train_list, img_train_list, label_test_list, img_test_list \
         = extract_dataset_info("./scene_classification_data")
 
-    # _, accuracy = classify_knn_tiny(label_classes, label_train_list, img_train_list, label_test_list, img_test_list)
+    classify_knn_tiny(label_classes, label_train_list, img_train_list, label_test_list, img_test_list)
 
     classify_knn_bow(label_classes, label_train_list, img_train_list, label_test_list, img_test_list)
-    exit(-1)
 
     classify_svm_bow(label_classes, label_train_list, img_train_list, label_test_list, img_test_list)
