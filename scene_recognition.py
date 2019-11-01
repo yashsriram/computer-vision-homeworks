@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import confusion_matrix, accuracy_score
 from sklearn.cluster import KMeans
-from sklearn.svm import LinearSVC
+from sklearn.svm import SVC, LinearSVC
 from scipy import stats
 from pathlib import Path, PureWindowsPath
 
@@ -55,17 +55,15 @@ def visualize_confusion_matrix(confusion, accuracy, label_classes):
 
 
 def compute_dsift(img, stride, size):
-    assert size <= img.shape[0] and size <= img.shape[1]
-    r = int((img.shape[0] - size) / stride)
-    c = int((img.shape[1] - size) / stride)
+    r = int((img.shape[0] - stride) / stride)
+    c = int((img.shape[1] - stride) / stride)
     sift = cv2.xfeatures2d.SIFT_create()
     dense_feature = []
     for i in range(r):
         for j in range(c):
-            patch = img[i * stride: i * stride + size, j * stride: j * stride + size]
             kps, patch_descriptors = sift.compute(
                 img,
-                [cv2.KeyPoint(x=j * stride + size, y=i * stride + size, _size=size)]
+                [cv2.KeyPoint(x=j * stride, y=i * stride, _size=size)]
             )
             for descriptor in patch_descriptors:
                 dense_feature.append(descriptor.reshape(-1))
@@ -74,7 +72,13 @@ def compute_dsift(img, stride, size):
 
 
 def get_tiny_image(img, output_size):
-    feature = cv2.resize(img, output_size, interpolation=cv2.INTER_AREA)
+    h, w = output_size
+    h_stride = int(img.shape[0] / h)
+    w_stride = int(img.shape[1] / w)
+    feature = np.zeros(output_size)
+    for hi in range(h):
+        for wi in range(w):
+            feature[hi, wi] = np.average(img[hi * h_stride: (hi + 1) * h_stride, wi * w_stride: (wi + 1) * w_stride])
     feature = feature.reshape(-1)
     norm = np.linalg.norm(feature)
     feature = feature / norm
@@ -125,13 +129,13 @@ def classify_knn_tiny(class_labels, train_labels, train_images, true_test_labels
 def build_visual_dictionary(dense_feature_list, dic_size):
     dense_feature_vstack = np.vstack(dense_feature_list)
     INIT = 'k-means++'
-    N_INIT = 10
-    MAX_ITER = 300
+    N_INIT = 8
+    MAX_ITER = 400
     RANDOM_STATE = 0
     print(
         'K-means clustering started with params (init, n_init, max_iter, random_state) = ({}, {}, {}, {}) on data of shape {}'.format(
             INIT, N_INIT, MAX_ITER, RANDOM_STATE, dense_feature_vstack.shape))
-    kmeans = KMeans(dic_size, init=INIT, n_init=N_INIT, max_iter=MAX_ITER, random_state=RANDOM_STATE)
+    kmeans = KMeans(dic_size, init=INIT, n_init=N_INIT, max_iter=MAX_ITER, random_state=RANDOM_STATE, n_jobs=4)
     kmeans.fit(dense_feature_vstack)
     return kmeans.cluster_centers_
 
@@ -202,7 +206,12 @@ def classify_knn_bow(class_labels, train_labels, train_images, true_test_labels,
 
 
 def predict_svm(feature_train, label_train, feature_test, n_classes):
-    models = [LinearSVC(random_state=0, tol=1e-5, C=1.0) for _ in range(n_classes)]
+    C = 6
+    GAMMA = 0.4
+    print('Using C = {} GAMMA = {} for SVC'.format(C, GAMMA))
+    models = []
+    for i in range(n_classes):
+        models.append(SVC(random_state=0, tol=1e-5, C=C, gamma=GAMMA, probability=True))
     for i, model in enumerate(models):
         binary_labels = []
         for label in label_train:
@@ -211,27 +220,47 @@ def predict_svm(feature_train, label_train, feature_test, n_classes):
             else:
                 binary_labels.append(0)
         model.fit(feature_train, binary_labels)
-
     # predict all feature test samples for all models
     across_model_predictions = []
     for i, model in enumerate(models):
-        across_model_predictions.append(model.predict(feature_test))
+        across_model_predictions.append(model.predict_log_proba(feature_test))
     across_model_predictions = np.asarray(across_model_predictions)
 
     # choose the class of corresponding model that gives highest probability
     predicted_test_labels = []
     for i, test_sample in enumerate(feature_test):
-        predicted_class = across_model_predictions[:, i].argmax() + 1
+        predicted_class = across_model_predictions[:, i, 1].argmax() + 1
+        # print(across_model_predictions[:, i, 1])
+        # print(predicted_class)
         predicted_test_labels.append(predicted_class)
 
     predicted_test_labels = np.asarray(predicted_test_labels)
     return predicted_test_labels
 
 
+def classify_svm_bow_load(class_labels, train_labels, train_images, true_test_labels, test_images):
+    vocab = np.loadtxt('vocab.txt')
+    print('Vocab created with shape {}'.format(vocab.shape))
+    train_bows = np.loadtxt('train_bows.txt')
+    test_bows = np.loadtxt('test_bows.txt')
+
+    train_labels_encoded = []
+    for train_label in train_labels:
+        train_labels_encoded.append(class_labels.index(train_label) + 1)
+    predicted_test_labels_encoded = predict_svm(train_bows, train_labels_encoded, test_bows, len(class_labels))
+    predicted_test_labels = [class_labels[encoded_label - 1] for encoded_label in predicted_test_labels_encoded]
+    confusion = confusion_matrix(true_test_labels, predicted_test_labels)
+    accuracy = accuracy_score(true_test_labels, predicted_test_labels)
+    print('BOW+SVC : accuracy: {}'.format(accuracy))
+
+    visualize_confusion_matrix(confusion, accuracy, class_labels)
+    return confusion, accuracy
+
+
 def classify_svm_bow(class_labels, train_labels, train_images, true_test_labels, test_images):
     STRIDE = 32
-    SHAPE = 32
-    DIC_SIZE = 50
+    SHAPE = 24
+    DIC_SIZE = 65
     print('In dense sift calculation, using stride: {} shape: {}'.format(STRIDE, SHAPE))
     # Calculating train dense features
     train_dense_feature_list = []
@@ -241,6 +270,14 @@ def classify_svm_bow(class_labels, train_labels, train_images, true_test_labels,
         dense_feature = compute_dsift(train_image, STRIDE, SHAPE)
         train_dense_feature_list.append(dense_feature)
     print()
+
+    # test_dense_feature_list = []
+    # for i, test_image_file in enumerate(test_images):
+    #     print('Computing dense sift for test images {}/{}\r'.format(i + 1, len(test_images)), end='')
+    #     test_image = cv2.imread(test_image_file, 0)
+    #     dense_feature = compute_dsift(test_image, STRIDE, SHAPE)
+    #     test_dense_feature_list.append(dense_feature)
+    # print()
 
     # Calculating vocabulary
     vocab = build_visual_dictionary(train_dense_feature_list, DIC_SIZE)
@@ -255,16 +292,29 @@ def classify_svm_bow(class_labels, train_labels, train_images, true_test_labels,
         train_bows.append(compute_bow(dense_feature, vocab))
     print()
     train_bows = np.asarray(train_bows)
+    np.savetxt('train_bows.txt', train_bows)
+    # train_bows = np.loadtxt('train_bows.txt')
 
     # Calculating test bow features
     test_bows = []
+
+    # for i, dense_feature in enumerate(test_dense_feature_list):
+    #     print('Computing BOW for train images {}/{}\r'.format(i + 1, len(test_images)), end='')
+    #     test_bows.append(compute_bow(dense_feature, vocab))
+    # print()
+
     for i, test_image_file in enumerate(test_images):
         print('Computing BOW for test images {}/{}\r'.format(i + 1, len(test_images)), end='')
         test_image = cv2.imread(test_image_file, 0)
         dense_feature = compute_dsift(test_image, STRIDE, SHAPE)
         test_bows.append(compute_bow(dense_feature, vocab))
     print()
+
     test_bows = np.asarray(test_bows)
+    np.savetxt('test_bows.txt', test_bows)
+    # test_bows = np.loadtxt('test_bows.txt')
+
+
 
     train_labels_encoded = []
     for train_label in train_labels:
@@ -288,4 +338,5 @@ if __name__ == '__main__':
 
     # classify_knn_bow(label_classes, label_train_list, img_train_list, label_test_list, img_test_list)
 
-    classify_svm_bow(label_classes, label_train_list, img_train_list, label_test_list, img_test_list)
+    # classify_svm_bow(label_classes, label_train_list, img_train_list, label_test_list, img_test_list)
+    classify_svm_bow_load(label_classes, label_train_list, img_train_list, label_test_list, img_test_list)
