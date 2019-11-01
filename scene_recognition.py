@@ -55,75 +55,22 @@ def visualize_confusion_matrix(confusion, accuracy, label_classes):
 
 
 def compute_dsift(img, stride, size):
-    r = int((img.shape[0] - stride) / stride)
-    c = int((img.shape[1] - stride) / stride)
+    assert size <= img.shape[0] and size <= img.shape[1]
+    r = int((img.shape[0] - size) / stride)
+    c = int((img.shape[1] - size) / stride)
     sift = cv2.xfeatures2d.SIFT_create()
     dense_feature = []
     for i in range(r):
         for j in range(c):
+            patch = img[i * stride: i * stride + size, j * stride: j * stride + size]
             kps, patch_descriptors = sift.compute(
                 img,
-                [cv2.KeyPoint(x=j * stride + stride, y=i * stride + stride, _size=size)]
+                [cv2.KeyPoint(x=j * stride + size, y=i * stride + size, _size=size)]
             )
             for descriptor in patch_descriptors:
                 dense_feature.append(descriptor.reshape(-1))
     dense_feature = np.array(dense_feature)
     return dense_feature
-
-
-def get_tiny_image(img, output_size):
-    h, w = output_size
-    h_stride = int(img.shape[0] / h)
-    w_stride = int(img.shape[1] / w)
-    feature = np.zeros(output_size)
-    for hi in range(h):
-        for wi in range(w):
-            feature[hi, wi] = np.average(img[hi * h_stride: (hi + 1) * h_stride, wi * w_stride: (wi + 1) * w_stride])
-    feature = feature.reshape(-1)
-    norm = np.linalg.norm(feature)
-    feature = feature / norm
-    mean = np.mean(feature)
-    feature = feature - mean
-    return feature
-
-
-def predict_knn(feature_train, label_train, feature_test, k):
-    neigh = KNeighborsClassifier(n_neighbors=k)
-    neigh.fit(feature_train, label_train)
-    test_labels = neigh.predict(feature_test)
-    return test_labels
-
-
-def classify_knn_tiny(class_labels, train_labels, train_images, true_test_labels, test_images):
-    TINY_FEATURE_SIZE = (16, 16)
-    K_IN_KNN = 6
-    # Create train features
-    feature_train = []
-    for img_file in train_images:
-        img = cv2.imread(img_file, 0)
-        tiny_img = get_tiny_image(img, TINY_FEATURE_SIZE)
-        feature_train.append(tiny_img)
-    feature_train = np.asarray(feature_train)
-
-    # Create test features
-    feature_test = []
-    for img_file in test_images:
-        img = cv2.imread(img_file, 0)
-        tiny_img = get_tiny_image(img, TINY_FEATURE_SIZE)
-        feature_test.append(tiny_img)
-    feature_test = np.asarray(feature_test)
-
-    train_labels_encoded = []
-    for train_label in train_labels:
-        train_labels_encoded.append(class_labels.index(train_label) + 1)
-    predicted_test_labels_encoded = predict_knn(feature_train, train_labels_encoded, feature_test, K_IN_KNN)
-    predicted_test_labels = [class_labels[encoded_label - 1] for encoded_label in predicted_test_labels_encoded]
-    confusion = confusion_matrix(true_test_labels, predicted_test_labels)
-    accuracy = accuracy_score(true_test_labels, predicted_test_labels)
-    print('TINY+KNN : tiny_size: {} kNN\'s k: {} accuracy: {}'.format(TINY_FEATURE_SIZE, K_IN_KNN, accuracy))
-
-    visualize_confusion_matrix(confusion, accuracy, class_labels)
-    return confusion, accuracy
 
 
 def build_visual_dictionary(dense_feature_list, dic_size):
@@ -133,9 +80,9 @@ def build_visual_dictionary(dense_feature_list, dic_size):
     MAX_ITER = 300
     RANDOM_STATE = 0
     print(
-        'K-means clustering started with params (init, n_init, max_iter, random_state, dic_size) = ({}, {}, {}, {}, {}) on data of shape {}'.format(
-            INIT, N_INIT, MAX_ITER, RANDOM_STATE, dic_size, dense_feature_vstack.shape))
-    kmeans = KMeans(dic_size, init=INIT, n_init=N_INIT, max_iter=MAX_ITER, random_state=RANDOM_STATE, n_jobs=4)
+        'K-means clustering started with params (init, n_init, max_iter, random_state) = ({}, {}, {}, {}) on data of shape {}'.format(
+            INIT, N_INIT, MAX_ITER, RANDOM_STATE, dense_feature_vstack.shape))
+    kmeans = KMeans(dic_size, init=INIT, n_init=N_INIT, max_iter=MAX_ITER, random_state=RANDOM_STATE)
     kmeans.fit(dense_feature_vstack)
     return kmeans.cluster_centers_
 
@@ -151,6 +98,13 @@ def compute_bow(feature, vocab):
     bow = np.asarray(bow)
     bow = bow / np.linalg.norm(bow)
     return bow
+
+
+def predict_knn(feature_train, label_train, feature_test, k):
+    neigh = KNeighborsClassifier(n_neighbors=k)
+    neigh.fit(feature_train, label_train)
+    test_labels = neigh.predict(feature_test)
+    return test_labels
 
 
 def classify_knn_bow(class_labels, train_labels, train_images, true_test_labels, test_images):
@@ -194,12 +148,60 @@ def classify_knn_bow(class_labels, train_labels, train_images, true_test_labels,
 
     train_labels_encoded = []
     for train_label in train_labels:
-        train_labels_encoded.append(class_labels.index(train_label) + 1)
+        train_labels_encoded.append(class_labels.index(train_label))
     predicted_test_labels_encoded = predict_knn(train_bows, train_labels_encoded, test_bows, KNN_K)
-    predicted_test_labels = [class_labels[encoded_label - 1] for encoded_label in predicted_test_labels_encoded]
+    predicted_test_labels = [class_labels[encoded_label] for encoded_label in predicted_test_labels_encoded]
     confusion = confusion_matrix(true_test_labels, predicted_test_labels)
     accuracy = accuracy_score(true_test_labels, predicted_test_labels)
     print('BOW+KNN : kNN\'s k: {} accuracy: {}'.format(KNN_K, accuracy))
+
+    visualize_confusion_matrix(confusion, accuracy, class_labels)
+    return confusion, accuracy
+
+
+def get_tiny_image(img, output_size):
+    h, w = output_size
+    h_stride = int(img.shape[0] / h)
+    w_stride = int(img.shape[1] / w)
+    feature = np.zeros(output_size)
+    for hi in range(h):
+        for wi in range(w):
+            feature[hi, wi] = np.average(img[hi * h_stride: (hi + 1) * h_stride, wi * w_stride: (wi + 1) * w_stride])
+    feature = feature.reshape(-1)
+    norm = np.linalg.norm(feature)
+    feature = feature / norm
+    mean = np.mean(feature)
+    feature = feature - mean
+    return feature
+
+
+def classify_knn_tiny(class_labels, train_labels, train_images, true_test_labels, test_images):
+    TINY_FEATURE_SIZE = (16, 16)
+    K_IN_KNN = 6
+    # Create train features
+    feature_train = []
+    for img_file in train_images:
+        img = cv2.imread(img_file, 0)
+        tiny_img = get_tiny_image(img, TINY_FEATURE_SIZE)
+        feature_train.append(tiny_img)
+    feature_train = np.asarray(feature_train)
+
+    # Create test features
+    feature_test = []
+    for img_file in test_images:
+        img = cv2.imread(img_file, 0)
+        tiny_img = get_tiny_image(img, TINY_FEATURE_SIZE)
+        feature_test.append(tiny_img)
+    feature_test = np.asarray(feature_test)
+
+    train_labels_encoded = []
+    for train_label in train_labels:
+        train_labels_encoded.append(class_labels.index(train_label) + 1)
+    predicted_test_labels_encoded = predict_knn(feature_train, train_labels_encoded, feature_test, K_IN_KNN)
+    predicted_test_labels = [class_labels[encoded_label - 1] for encoded_label in predicted_test_labels_encoded]
+    confusion = confusion_matrix(true_test_labels, predicted_test_labels)
+    accuracy = accuracy_score(true_test_labels, predicted_test_labels)
+    print('TINY+KNN : tiny_size: {} kNN\'s k: {} accuracy: {}'.format(TINY_FEATURE_SIZE, K_IN_KNN, accuracy))
 
     visualize_confusion_matrix(confusion, accuracy, class_labels)
     return confusion, accuracy
