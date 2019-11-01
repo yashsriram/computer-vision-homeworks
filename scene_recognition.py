@@ -63,7 +63,7 @@ def compute_dsift(img, stride, size):
         for j in range(c):
             kps, patch_descriptors = sift.compute(
                 img,
-                [cv2.KeyPoint(x=j * stride, y=i * stride, _size=size)]
+                [cv2.KeyPoint(x=j * stride + stride, y=i * stride + stride, _size=size)]
             )
             for descriptor in patch_descriptors:
                 dense_feature.append(descriptor.reshape(-1))
@@ -129,12 +129,12 @@ def classify_knn_tiny(class_labels, train_labels, train_images, true_test_labels
 def build_visual_dictionary(dense_feature_list, dic_size):
     dense_feature_vstack = np.vstack(dense_feature_list)
     INIT = 'k-means++'
-    N_INIT = 8
-    MAX_ITER = 400
+    N_INIT = 10
+    MAX_ITER = 300
     RANDOM_STATE = 0
     print(
-        'K-means clustering started with params (init, n_init, max_iter, random_state) = ({}, {}, {}, {}) on data of shape {}'.format(
-            INIT, N_INIT, MAX_ITER, RANDOM_STATE, dense_feature_vstack.shape))
+        'K-means clustering started with params (init, n_init, max_iter, random_state, dic_size) = ({}, {}, {}, {}, {}) on data of shape {}'.format(
+            INIT, N_INIT, MAX_ITER, RANDOM_STATE, dic_size, dense_feature_vstack.shape))
     kmeans = KMeans(dic_size, init=INIT, n_init=N_INIT, max_iter=MAX_ITER, random_state=RANDOM_STATE, n_jobs=4)
     kmeans.fit(dense_feature_vstack)
     return kmeans.cluster_centers_
@@ -206,8 +206,8 @@ def classify_knn_bow(class_labels, train_labels, train_images, true_test_labels,
 
 
 def predict_svm(feature_train, label_train, feature_test, n_classes):
-    C = 6
-    GAMMA = 0.4
+    C = 4
+    GAMMA = 'scale'
     print('Using C = {} GAMMA = {} for SVC'.format(C, GAMMA))
     models = []
     for i in range(n_classes):
@@ -260,7 +260,7 @@ def classify_svm_bow_load(class_labels, train_labels, train_images, true_test_la
 def classify_svm_bow(class_labels, train_labels, train_images, true_test_labels, test_images):
     STRIDE = 32
     SHAPE = 24
-    DIC_SIZE = 65
+    DIC_SIZE = 64
     print('In dense sift calculation, using stride: {} shape: {}'.format(STRIDE, SHAPE))
     # Calculating train dense features
     train_dense_feature_list = []
@@ -299,7 +299,7 @@ def classify_svm_bow(class_labels, train_labels, train_images, true_test_labels,
     test_bows = []
 
     # for i, dense_feature in enumerate(test_dense_feature_list):
-    #     print('Computing BOW for train images {}/{}\r'.format(i + 1, len(test_images)), end='')
+    #     print('Computing BOW for test images {}/{}\r'.format(i + 1, len(test_images)), end='')
     #     test_bows.append(compute_bow(dense_feature, vocab))
     # print()
 
@@ -313,8 +313,6 @@ def classify_svm_bow(class_labels, train_labels, train_images, true_test_labels,
     test_bows = np.asarray(test_bows)
     np.savetxt('test_bows.txt', test_bows)
     # test_bows = np.loadtxt('test_bows.txt')
-
-
 
     train_labels_encoded = []
     for train_label in train_labels:
@@ -334,9 +332,8 @@ if __name__ == '__main__':
     label_classes, label_train_list, img_train_list, label_test_list, img_test_list \
         = extract_dataset_info("./scene_classification_data")
 
-    # classify_knn_tiny(label_classes, label_train_list, img_train_list, label_test_list, img_test_list)
+    classify_knn_tiny(label_classes, label_train_list, img_train_list, label_test_list, img_test_list)
 
-    # classify_knn_bow(label_classes, label_train_list, img_train_list, label_test_list, img_test_list)
+    classify_knn_bow(label_classes, label_train_list, img_train_list, label_test_list, img_test_list)
 
-    # classify_svm_bow(label_classes, label_train_list, img_train_list, label_test_list, img_test_list)
-    classify_svm_bow_load(label_classes, label_train_list, img_train_list, label_test_list, img_test_list)
+    classify_svm_bow(label_classes, label_train_list, img_train_list, label_test_list, img_test_list)
