@@ -128,12 +128,35 @@ def compute_F(pts1, pts2):
         if min_loss is None or loss < min_loss:
             min_loss = loss
             best_F = F_cleaned
-    print(min_loss, best_F)
+    print('Min loss = {} for RANSAC iterations = {}'.format(min_loss, RANSAC_N))
+    print('Best fundamental matrix = {}'.format(best_F))
     return best_F
 
 
+def make_skew_symmetric_matrix(vec3d):
+    a, b, c = vec3d
+    skew_symmetric = np.asarray([
+        [0, -c, b],
+        [c, 0, -a],
+        [-b, a, 0],
+    ])
+    return skew_symmetric
+
+
 def triangulation(P1, P2, pts1, pts2):
-    # TO DO
+    for pt1, pt2 in zip(pts1, pts2):
+        pt1_3d = list(pt1) + [1]
+        pt2_3d = list(pt2) + [1]
+        pt1_skew_symmteric = make_skew_symmetric_matrix(pt1_3d)
+        pt2_skew_symmteric = make_skew_symmetric_matrix(pt2_3d)
+        pt1_cross_P1 = pt1_skew_symmteric @ P1
+        pt2_cross_P2 = pt2_skew_symmteric @ P2
+        A = np.vstack((pt1_cross_P1[:2], pt2_cross_P2[:2]))
+        print(A)
+        print(A.shape)
+        X = null_space(A)
+        print(X.shape)
+        print(X)
     return pts3D
 
 
