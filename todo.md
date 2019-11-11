@@ -1,5 +1,0 @@
-- [x] remove cv.resize()
-- [ ] remove n_jobs from Kmeans
-- [ ] remove savetxt loadtxt
-- [ ] check methods and parameters in report
-- [ ] final testing all
