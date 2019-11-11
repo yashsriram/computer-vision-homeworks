@@ -6,14 +6,8 @@ from cnn import train_slp_linear, train_slp, train_mlp, train_cnn
 
 
 def main_slp_linear():
-    BATCH_SIZE = 121
     mnist_train = sio.loadmat('./mnist_train.mat')
     mnist_test = sio.loadmat('./mnist_test.mat')
-    label_train = mnist_train['label_train']
-    im_train = mnist_train['im_train']
-    for i in range(101):
-        mini_batch_x, mini_batch_y = get_mini_batch(im_train, label_train, BATCH_SIZE)
-    exit(-1)
     im_train, label_train = mnist_train['im_train'], mnist_train['label_train']
     im_test, label_test = mnist_test['im_test'], mnist_test['label_test']
     batch_size = 32

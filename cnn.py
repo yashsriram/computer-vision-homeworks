@@ -47,7 +47,7 @@ def get_mini_batch(im_train, label_train, batch_size):
 
 
 def fc(x, w, b):
-    # TO DO
+    y = np.matmul(w, x) + b
     return y
 
 
