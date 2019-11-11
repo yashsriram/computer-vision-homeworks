@@ -19,32 +19,30 @@ def one_hot_encoding(number):
     return encoding
 
 
-sampled_indices_for_mini_batch = []
+available_indices_for_mini_batch = list(np.arange(12000))
 
 
 def get_mini_batch(im_train, label_train, batch_size):
-    global sampled_indices_for_mini_batch
-    num_train_samples = im_train.shape[1]
+    global available_indices_for_mini_batch
+    train_samples_size = im_train.shape[1]
     # If all are sampled restart sampling
-    if len(sampled_indices_for_mini_batch) == num_train_samples:
-        sampled_indices_for_mini_batch = []
+    if len(available_indices_for_mini_batch) == 0:
+        available_indices_for_mini_batch = list(np.arange(train_samples_size))
 
     mini_batch_x = []
     mini_batch_y = []
-    shuffled_train_indices = np.arange(num_train_samples)
-    for train_idx in shuffled_train_indices:
-        # If this index already sampled then go with next one
-        if train_idx in sampled_indices_for_mini_batch:
-            continue
+    np.random.shuffle(available_indices_for_mini_batch)
+    for train_idx in available_indices_for_mini_batch:
         # Sample this index into mini batch
-        mini_batch_x.append(im_train[0, train_idx])
+        mini_batch_x.append(im_train[:, train_idx])
         mini_batch_y.append(one_hot_encoding(label_train[0, train_idx]))
-        # Remember that this index is sampled
-        sampled_indices_for_mini_batch.append(train_idx)
         # Stop after batch_size number of samples
         if len(mini_batch_x) == batch_size:
             break
+    # Remove sampled indices from available_indices_for_mini_batch
+    available_indices_for_mini_batch = available_indices_for_mini_batch[len(mini_batch_x):]
 
+    mini_batch_x, mini_batch_y = np.transpose(np.asarray(mini_batch_x)), np.transpose(np.asarray(mini_batch_y))
     return mini_batch_x, mini_batch_y
 
 
@@ -129,6 +127,7 @@ def train_cnn(mini_batch_x, mini_batch_y):
 
 
 if __name__ == '__main__':
+    np.random.seed(42)
     main.main_slp_linear()
     main.main_slp()
     main.main_mlp()
