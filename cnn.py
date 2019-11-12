@@ -166,10 +166,11 @@ def train_slp_linear(mini_batches_x, mini_batches_y):
         w = w - mini_batch_dl_dw.reshape(w.shape) * LEARNING_RATE
         b = b - mini_batch_dl_db.reshape(b.shape) * LEARNING_RATE
 
-    # plt.xlabel('iterations', fontsize=18)
-    # plt.ylabel('training loss', fontsize=16)
-    # plt.plot(loss_values)
-    # plt.show()
+    print()
+    plt.xlabel('iterations', fontsize=18)
+    plt.ylabel('training loss', fontsize=16)
+    plt.plot(loss_values)
+    plt.show()
 
     return w, b
 
@@ -209,6 +210,7 @@ def train_slp(mini_batches_x, mini_batches_y):
         w = w - mini_batch_dl_dw.reshape(w.shape) * LEARNING_RATE
         b = b - mini_batch_dl_db.reshape(b.shape) * LEARNING_RATE
 
+    print()
     plt.xlabel('iterations', fontsize=18)
     plt.ylabel('training loss', fontsize=16)
     plt.plot(loss_values)
