@@ -57,7 +57,8 @@ def fc_backward(dl_dy, x, w, b, y):
 
 
 def loss_euclidean(y_tilde, y):
-    # TO DO
+    l = np.sum((y_tilde - y) ** 2)
+    dl_dy = (y_tilde - y) * 2
     return l, dl_dy
 
 
