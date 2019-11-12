@@ -52,7 +52,21 @@ def fc(x, w, b):
 
 
 def fc_backward(dl_dy, x, w, b, y):
-    # TO DO
+    n, m = w.shape
+    # dy_dx = w
+    dl_dx = np.matmul(dl_dy, w)
+    # dy_dw =
+    # [ X 0 0 0 ... 0 (n times)]
+    # [ 0 X 0 0 ... 0 (n times)]
+    #           (n times)
+    # [ 0 0 0 0 ... X (n times)]
+    dl_dw = np.zeros((n, m))
+    for i in range(n):
+        for j in range(m):
+            dl_dw[i, j] = dl_dy[i] * x[j]
+    dl_dy.reshape(-1)
+    # dy_db = I (n x n)
+    dl_db = dl_dy
     return dl_dx, dl_dw, dl_db
 
 
