@@ -10,7 +10,7 @@ def main_slp_linear():
     mnist_test = sio.loadmat('./mnist_test.mat')
     im_train, label_train = mnist_train['im_train'], mnist_train['label_train']
     im_test, label_test = mnist_test['im_test'], mnist_test['label_test']
-    batch_size = 31
+    batch_size = 32
     im_train, im_test = im_train / 255.0, im_test / 255.0
     mini_batches_x, mini_batches_y = get_mini_batch(im_train, label_train, batch_size)
     # for batch_x, batch_y in zip(mini_batches_x, mini_batches_y):

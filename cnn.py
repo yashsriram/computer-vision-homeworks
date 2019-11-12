@@ -65,7 +65,7 @@ def fc_backward(dl_dy, x, w, b, y):
     for i in range(n):
         for j in range(m):
             dl_dw[i, j] = dl_dy[i] * x[j]
-    dl_dy.reshape(-1)
+    dl_dw = dl_dw.reshape(-1)
     # dy_db = I (n x n)
     dl_db = dl_dy
     return dl_dx, dl_dw, dl_db
@@ -122,9 +122,37 @@ def flattening_backward(dl_dy, x, y):
     return dl_dx
 
 
-def train_slp_linear(mini_batch_x, mini_batch_y):
-    LEARNING_RATE = 0.1
-    DECAY_RATE = 0.1
+def train_slp_linear(mini_batches_x, mini_batches_y):
+    LEARNING_RATE = 0.001
+    DECAY_RATE = 0.9
+    NUM_ITERATIONS = 2000
+    OUTPUT_SIZE = 10
+    INPUT_SIZE = 196
+    w = np.random.normal(0, 1, size=(OUTPUT_SIZE, INPUT_SIZE))
+    b = np.random.normal(0, 1, size=(OUTPUT_SIZE, 1))
+    num_mini_batches = len(mini_batches_x)
+    for iter_i in range(NUM_ITERATIONS):
+        print('Iteration #{}\r'.format(iter_i), end='')
+        if iter_i + 1 % 1000 == 0:
+            LEARNING_RATE = LEARNING_RATE * DECAY_RATE
+        # Determining current mini-batch
+        curr_mini_batch_x = mini_batches_x[iter_i % num_mini_batches]
+        curr_mini_batch_y = mini_batches_y[iter_i % num_mini_batches]
+        curr_mini_batch_size = curr_mini_batch_x.shape[1]
+        # Current mini-batch gradients
+        mini_batch_dl_dw = np.zeros(OUTPUT_SIZE * INPUT_SIZE)
+        mini_batch_dl_db = np.zeros(OUTPUT_SIZE)
+        for idx in range(curr_mini_batch_size):
+            x = curr_mini_batch_x[:, idx]
+            y = curr_mini_batch_y[:, idx]
+            y_tilde = fc(x.reshape(196, 1), w, b).reshape(-1)
+            l, dl_dy = loss_euclidean(y_tilde, y)
+            dl_dx, dl_dw, dl_db = fc_backward(dl_dy, x, w, b, y)
+            mini_batch_dl_dw += dl_dw
+            mini_batch_dl_db += dl_db
+        w = w - mini_batch_dl_dw.reshape(w.shape) * LEARNING_RATE
+        b = b - mini_batch_dl_db.reshape(b.shape) * LEARNING_RATE
+
     return w, b
 
 
@@ -146,6 +174,6 @@ def train_cnn(mini_batch_x, mini_batch_y):
 if __name__ == '__main__':
     np.random.seed(42)
     main.main_slp_linear()
-    main.main_slp()
-    main.main_mlp()
-    main.main_cnn()
+    # main.main_slp()
+    # main.main_mlp()
+    # main.main_cnn()
