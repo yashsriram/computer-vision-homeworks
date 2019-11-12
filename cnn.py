@@ -19,31 +19,32 @@ def one_hot_encoding(number):
     return encoding
 
 
-available_indices_for_mini_batch = list(np.arange(12000))
-
-
 def get_mini_batch(im_train, label_train, batch_size):
-    global available_indices_for_mini_batch
     train_samples_size = im_train.shape[1]
-    # If all are sampled restart sampling
-    if len(available_indices_for_mini_batch) == 0:
-        available_indices_for_mini_batch = list(np.arange(train_samples_size))
+    shuffed_indices = list(np.arange(train_samples_size))
+    np.random.shuffle(shuffed_indices)
 
+    mini_batches_x = []
+    mini_batches_y = []
     mini_batch_x = []
     mini_batch_y = []
-    np.random.shuffle(available_indices_for_mini_batch)
-    for train_idx in available_indices_for_mini_batch:
+    for train_idx in shuffed_indices:
         # Sample this index into mini batch
         mini_batch_x.append(im_train[:, train_idx])
         mini_batch_y.append(one_hot_encoding(label_train[0, train_idx]))
         # Stop after batch_size number of samples
         if len(mini_batch_x) == batch_size:
-            break
-    # Remove sampled indices from available_indices_for_mini_batch
-    available_indices_for_mini_batch = available_indices_for_mini_batch[len(mini_batch_x):]
+            mini_batch_x, mini_batch_y = np.transpose(np.asarray(mini_batch_x)), np.transpose(np.asarray(mini_batch_y))
+            mini_batches_x.append(mini_batch_x)
+            mini_batches_y.append(mini_batch_y)
+            mini_batch_x = []
+            mini_batch_y = []
+    if len(mini_batch_x) > 0:
+        mini_batch_x, mini_batch_y = np.transpose(np.asarray(mini_batch_x)), np.transpose(np.asarray(mini_batch_y))
+        mini_batches_x.append(mini_batch_x)
+        mini_batches_y.append(mini_batch_y)
 
-    mini_batch_x, mini_batch_y = np.transpose(np.asarray(mini_batch_x)), np.transpose(np.asarray(mini_batch_y))
-    return mini_batch_x, mini_batch_y
+    return mini_batches_x, mini_batches_y
 
 
 def fc(x, w, b):
@@ -122,7 +123,8 @@ def flattening_backward(dl_dy, x, y):
 
 
 def train_slp_linear(mini_batch_x, mini_batch_y):
-    # TO DO
+    LEARNING_RATE = 0.1
+    DECAY_RATE = 0.1
     return w, b
 
 
