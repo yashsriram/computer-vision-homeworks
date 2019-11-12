@@ -78,8 +78,17 @@ def loss_euclidean(y_tilde, y):
 
 
 def loss_cross_entropy_softmax(x, y):
-    # TO DO
-    return l, dl_dy
+    x_exp = np.exp(x)
+    x_exp_sum = np.sum(x_exp)
+    y_tilde = np.asarray([(x_exp_i / x_exp_sum) for x_exp_i in x_exp])
+    # Cross entropy loss Sig(y[i] * log(y_tilde[i]))
+    l = 0
+    for i, yi in enumerate(y):
+        if yi > 0:
+            l += yi * np.log(y_tilde[i])
+    # Directly given in slides
+    dl_dx = y_tilde - y
+    return l, dl_dx
 
 
 def relu(x):
@@ -149,7 +158,7 @@ def train_slp_linear(mini_batches_x, mini_batches_y):
             y = curr_mini_batch_y[:, idx]
             y_tilde = fc(x.reshape(196, 1), w, b).reshape(-1)
             l, dl_dy = loss_euclidean(y_tilde, y)
-            mini_batch_loss += l
+            mini_batch_loss += np.abs(l)
             dl_dx, dl_dw, dl_db = fc_backward(dl_dy, x, w, b, y)
             mini_batch_dl_dw += dl_dw
             mini_batch_dl_db += dl_db
@@ -165,8 +174,46 @@ def train_slp_linear(mini_batches_x, mini_batches_y):
     return w, b
 
 
-def train_slp(mini_batch_x, mini_batch_y):
-    # TO DO
+def train_slp(mini_batches_x, mini_batches_y):
+    LEARNING_RATE = 0.04
+    DECAY_RATE = 0.9
+    NUM_ITERATIONS = 2000
+    OUTPUT_SIZE = 10
+    INPUT_SIZE = 196
+    w = np.random.normal(0, 1, size=(OUTPUT_SIZE, INPUT_SIZE))
+    b = np.random.normal(0, 1, size=(OUTPUT_SIZE, 1))
+    num_mini_batches = len(mini_batches_x)
+    loss_values = []
+    for iter_i in range(NUM_ITERATIONS):
+        print('Iteration #{}\r'.format(iter_i), end='')
+        if iter_i + 1 % 1000 == 0:
+            LEARNING_RATE = LEARNING_RATE * DECAY_RATE
+        # Determining current mini-batch
+        curr_mini_batch_x = mini_batches_x[iter_i % num_mini_batches]
+        curr_mini_batch_y = mini_batches_y[iter_i % num_mini_batches]
+        curr_mini_batch_size = curr_mini_batch_x.shape[1]
+        # Current mini-batch gradients
+        mini_batch_dl_dw = np.zeros(OUTPUT_SIZE * INPUT_SIZE)
+        mini_batch_dl_db = np.zeros(OUTPUT_SIZE)
+        mini_batch_loss = 0
+        for idx in range(curr_mini_batch_size):
+            x = curr_mini_batch_x[:, idx]
+            y = curr_mini_batch_y[:, idx]
+            y_tilde = fc(x.reshape(196, 1), w, b).reshape(-1)
+            l, dl_dy = loss_cross_entropy_softmax(y_tilde, y)
+            mini_batch_loss += np.abs(l)
+            dl_dx, dl_dw, dl_db = fc_backward(dl_dy, x, w, b, y)
+            mini_batch_dl_dw += dl_dw
+            mini_batch_dl_db += dl_db
+        loss_values.append(mini_batch_loss)
+        w = w - mini_batch_dl_dw.reshape(w.shape) * LEARNING_RATE
+        b = b - mini_batch_dl_db.reshape(b.shape) * LEARNING_RATE
+
+    plt.xlabel('iterations', fontsize=18)
+    plt.ylabel('training loss', fontsize=16)
+    plt.plot(loss_values)
+    plt.show()
+
     return w, b
 
 
@@ -183,6 +230,6 @@ def train_cnn(mini_batch_x, mini_batch_y):
 if __name__ == '__main__':
     np.random.seed(42)
     main.main_slp_linear()
-    # main.main_slp()
+    main.main_slp()
     # main.main_mlp()
     # main.main_cnn()

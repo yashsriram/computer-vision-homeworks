@@ -46,8 +46,8 @@ def main_slp():
     im_test, label_test = mnist_test['im_test'], mnist_test['label_test']
     batch_size = 32
     im_train, im_test = im_train / 255.0, im_test / 255.0
-    mini_batch_x, mini_batch_y = get_mini_batch(im_train, label_train, batch_size)
-    w, b = train_slp(mini_batch_x, mini_batch_y)
+    mini_batches_x, mini_batches_y = get_mini_batch(im_train, label_train, batch_size)
+    w, b = train_slp(mini_batches_x, mini_batches_y)
     sio.savemat('slp.mat', mdict={'w': w, 'b': b})
 
     acc = 0
