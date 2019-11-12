@@ -143,18 +143,22 @@ def train_slp_linear(mini_batches_x, mini_batches_y):
         # Current mini-batch gradients
         mini_batch_dl_dw = np.zeros(OUTPUT_SIZE * INPUT_SIZE)
         mini_batch_dl_db = np.zeros(OUTPUT_SIZE)
+        mini_batch_loss = 0
         for idx in range(curr_mini_batch_size):
             x = curr_mini_batch_x[:, idx]
             y = curr_mini_batch_y[:, idx]
             y_tilde = fc(x.reshape(196, 1), w, b).reshape(-1)
             l, dl_dy = loss_euclidean(y_tilde, y)
-            loss_values.append(l)
+            mini_batch_loss += l
             dl_dx, dl_dw, dl_db = fc_backward(dl_dy, x, w, b, y)
             mini_batch_dl_dw += dl_dw
             mini_batch_dl_db += dl_db
+        loss_values.append(mini_batch_loss)
         w = w - mini_batch_dl_dw.reshape(w.shape) * LEARNING_RATE
         b = b - mini_batch_dl_db.reshape(b.shape) * LEARNING_RATE
 
+    # plt.xlabel('iterations', fontsize=18)
+    # plt.ylabel('training loss', fontsize=16)
     # plt.plot(loss_values)
     # plt.show()
 
