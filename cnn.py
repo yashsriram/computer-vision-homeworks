@@ -131,6 +131,7 @@ def train_slp_linear(mini_batches_x, mini_batches_y):
     w = np.random.normal(0, 1, size=(OUTPUT_SIZE, INPUT_SIZE))
     b = np.random.normal(0, 1, size=(OUTPUT_SIZE, 1))
     num_mini_batches = len(mini_batches_x)
+    loss_values = []
     for iter_i in range(NUM_ITERATIONS):
         print('Iteration #{}\r'.format(iter_i), end='')
         if iter_i + 1 % 1000 == 0:
@@ -147,11 +148,15 @@ def train_slp_linear(mini_batches_x, mini_batches_y):
             y = curr_mini_batch_y[:, idx]
             y_tilde = fc(x.reshape(196, 1), w, b).reshape(-1)
             l, dl_dy = loss_euclidean(y_tilde, y)
+            loss_values.append(l)
             dl_dx, dl_dw, dl_db = fc_backward(dl_dy, x, w, b, y)
             mini_batch_dl_dw += dl_dw
             mini_batch_dl_db += dl_db
         w = w - mini_batch_dl_dw.reshape(w.shape) * LEARNING_RATE
         b = b - mini_batch_dl_db.reshape(b.shape) * LEARNING_RATE
+
+    # plt.plot(loss_values)
+    # plt.show()
 
     return w, b
 
