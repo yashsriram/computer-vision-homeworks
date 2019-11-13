@@ -92,7 +92,9 @@ def loss_cross_entropy_softmax(x, y):
 
 
 def relu(x):
-    # TO DO
+    x_vectorized = x.reshape(-1)
+    y = np.asarray([max(0, xi) for xi in x_vectorized])
+    y = y.reshape(x.shape)
     return y
 
 
@@ -231,7 +233,7 @@ def train_cnn(mini_batch_x, mini_batch_y):
 
 if __name__ == '__main__':
     np.random.seed(42)
-    main.main_slp_linear()
-    main.main_slp()
-    # main.main_mlp()
+    # main.main_slp_linear()
+    # main.main_slp()
+    main.main_mlp()
     # main.main_cnn()
