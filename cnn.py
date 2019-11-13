@@ -99,7 +99,13 @@ def relu(x):
 
 
 def relu_backward(dl_dy, x, y):
-    # TO DO
+    dl_dx = []
+    for i, dl_dy_i in enumerate(dl_dy):
+        if dl_dy_i >= 0:
+            dl_dx[i] = dl_dy_i
+        else:
+            dl_dx[i] = 0
+    dl_dx = np.asarray(dl_dx)
     return dl_dx
 
 
