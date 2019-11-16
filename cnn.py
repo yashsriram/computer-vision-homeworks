@@ -91,9 +91,17 @@ def loss_cross_entropy_softmax(x, y):
     return l, dl_dx
 
 
+RELU_E = 0.1
+
+
 def relu(x):
     x_vectorized = x.reshape(-1)
-    y = np.asarray([max(0, xi) for xi in x_vectorized])
+    y = np.zeros(x_vectorized.shape)
+    for i, xi in enumerate(x_vectorized):
+        if xi >= 0:
+            y[i] = xi
+        else:
+            y[i] = xi * RELU_E
     y = y.reshape(x.shape)
     return y
 
@@ -104,7 +112,7 @@ def relu_backward(dl_dy, x, y):
         if dl_dy_i >= 0:
             dl_dx[i] = dl_dy_i
         else:
-            dl_dx[i] = 0
+            dl_dx[i] = dl_dy_i * RELU_E
     return dl_dx
 
 
@@ -237,12 +245,21 @@ def train_slp(mini_batches_x, mini_batches_y):
 
 
 def train_mlp(mini_batches_x, mini_batches_y):
-    LEARNING_RATE = 0.01
+    LEARNING_RATE = 0.0001
     DECAY_RATE = 0.9
-    NUM_ITERATIONS = 200
+    NUM_ITERATIONS = 20000
     OUTPUT_SIZE = 10
     MIDDLE_LAYER_SIZE = 30
     INPUT_SIZE = 196
+    print('MLP config: '
+          'LEARNING_RATE = {}, '
+          'DECAY_RATE = {}, '
+          'NUM_ITERATIONS = {}, '
+          'OUTPUT_SIZE = {}, '
+          'MIDDLE_LAYER_SIZE = {}, '
+          'INPUT_SIZE = {} '
+          'RELU_E = {}'.format(LEARNING_RATE, DECAY_RATE, NUM_ITERATIONS, OUTPUT_SIZE, MIDDLE_LAYER_SIZE,
+                                   INPUT_SIZE, RELU_E))
     w1 = np.random.normal(0, 1, size=(MIDDLE_LAYER_SIZE, INPUT_SIZE))
     b1 = np.random.normal(0, 1, size=(MIDDLE_LAYER_SIZE, 1))
     w2 = np.random.normal(0, 1, size=(OUTPUT_SIZE, MIDDLE_LAYER_SIZE))
@@ -266,32 +283,112 @@ def train_mlp(mini_batches_x, mini_batches_y):
         for idx in range(curr_mini_batch_size):
             x = curr_mini_batch_x[:, idx]
             y = curr_mini_batch_y[:, idx]
+            # Forward prop
             # FC 1
             fc_x = fc(x.reshape(INPUT_SIZE, 1), w1, b1).reshape(-1)
             # ReLU 1
             relu_fc_x = relu(fc_x)
             # FC 2
             fc_relu_fc_x = fc(relu_fc_x.reshape(MIDDLE_LAYER_SIZE, 1), w2, b2).reshape(-1)
-            # ReLU 2
-            relu_fc_relu_fc_x = relu(fc_relu_fc_x)
+
             # Loss
-            l, dl_dy = loss_cross_entropy_softmax(relu_fc_relu_fc_x, y)
+            l, dl_dy = loss_cross_entropy_softmax(fc_relu_fc_x, y)
             mini_batch_loss += np.abs(l)
+
             # Back prop
-            # ReLu 2
-            dl_dy = relu_backward(dl_dy, fc_relu_fc_x, relu_fc_relu_fc_x)
             # FC 2
             dl_dy, dl_dw2, dl_db2 = fc_backward(dl_dy, relu_fc_x, w2, b2, fc_relu_fc_x)
             # ReLu 1
             dl_dy = relu_backward(dl_dy, fc_x, relu_fc_x)
             # FC 2
             _, dl_dw1, dl_db1 = fc_backward(dl_dy, x, w1, b1, fc_x)
+
+            # Sum gradients
+            mini_batch_dl_dw1 += dl_dw1
+            mini_batch_dl_db1 += dl_db1
+            mini_batch_dl_dw2 += dl_dw2
+            mini_batch_dl_db2 += dl_db2
+
+        loss_values.append(mini_batch_loss)
+        # Update
+        w1 = w1 - mini_batch_dl_dw1.reshape(w1.shape) * LEARNING_RATE
+        b1 = b1 - mini_batch_dl_db1.reshape(b1.shape) * LEARNING_RATE
+        w2 = w2 - mini_batch_dl_dw2.reshape(w2.shape) * LEARNING_RATE
+        b2 = b2 - mini_batch_dl_db2.reshape(b2.shape) * LEARNING_RATE
+        # print(np.mean(w1), np.mean(b1), np.mean(w2), np.mean(b2))
+
+    print()
+    axes = plt.gca()
+    axes.set_ylim([0, 100])
+    plt.xlabel('iterations', fontsize=18)
+    plt.ylabel('training loss', fontsize=16)
+    plt.plot(loss_values)
+    plt.show()
+
+    return w1, b1, w2, b2
+
+
+def train_mlp2(mini_batches_x, mini_batches_y):
+    LEARNING_RATE = 0.002
+    DECAY_RATE = 0.9
+    NUM_ITERATIONS = 100
+    OUTPUT_SIZE = 10
+    MIDDLE_LAYER_SIZE = 30
+    INPUT_SIZE = 196
+    print('MLP config: '
+          'LEARNING_RATE = {}, '
+          'DECAY_RATE = {}, '
+          'NUM_ITERATIONS = {}, '
+          'OUTPUT_SIZE = {}, '
+          'MIDDLE_LAYER_SIZE = {}, '
+          'INPUT_SIZE = {}'.format(LEARNING_RATE, DECAY_RATE, NUM_ITERATIONS, OUTPUT_SIZE, MIDDLE_LAYER_SIZE,
+                                   INPUT_SIZE))
+    w1 = np.random.normal(0, 1, size=(MIDDLE_LAYER_SIZE, INPUT_SIZE))
+    b1 = np.random.normal(0, 1, size=(MIDDLE_LAYER_SIZE, 1))
+    w2 = np.random.normal(0, 1, size=(OUTPUT_SIZE, MIDDLE_LAYER_SIZE))
+    b2 = np.random.normal(0, 1, size=(OUTPUT_SIZE, 1))
+    num_mini_batches = len(mini_batches_x)
+    loss_values = []
+    for iter_i in range(NUM_ITERATIONS):
+        print('Iteration # {}/{}\r'.format(iter_i, NUM_ITERATIONS), end='')
+        if iter_i + 1 % 1000 == 0:
+            LEARNING_RATE = LEARNING_RATE * DECAY_RATE
+        # Determining current mini-batch
+        curr_mini_batch_x = mini_batches_x[iter_i % num_mini_batches]
+        curr_mini_batch_y = mini_batches_y[iter_i % num_mini_batches]
+        curr_mini_batch_size = curr_mini_batch_x.shape[1]
+        # Current mini-batch gradients
+        mini_batch_dl_dw1 = np.zeros(MIDDLE_LAYER_SIZE * INPUT_SIZE)
+        mini_batch_dl_db1 = np.zeros(MIDDLE_LAYER_SIZE)
+        mini_batch_dl_dw2 = np.zeros(OUTPUT_SIZE * MIDDLE_LAYER_SIZE)
+        mini_batch_dl_db2 = np.zeros(OUTPUT_SIZE)
+        mini_batch_loss = 0
+        for idx in range(curr_mini_batch_size):
+            x = curr_mini_batch_x[:, idx]
+            y = curr_mini_batch_y[:, idx]
+            # Forward prop
+            # FC 1
+            fc_x = fc(x.reshape(INPUT_SIZE, 1), w1, b1).reshape(-1)
+            # FC 2
+            fc_relu_fc_x = fc(fc_x.reshape(MIDDLE_LAYER_SIZE, 1), w2, b2).reshape(-1)
+
+            # Loss
+            l, dl_dy = loss_cross_entropy_softmax(fc_relu_fc_x, y)
+            mini_batch_loss += np.abs(l)
+
+            # Back prop
+            # FC 2
+            dl_dy, dl_dw2, dl_db2 = fc_backward(dl_dy, fc_x, w2, b2, fc_relu_fc_x)
+            # FC 2
+            _, dl_dw1, dl_db1 = fc_backward(dl_dy, x, w1, b1, fc_x)
+
             # Sum gradients
             mini_batch_dl_dw1 += dl_dw1
             mini_batch_dl_db1 += dl_db1
             mini_batch_dl_dw2 += dl_dw2
             mini_batch_dl_db2 += dl_db2
         loss_values.append(mini_batch_loss)
+        # print(np.sum(np.abs(mini_batch_dl_dw1)), np.sum(np.abs(mini_batch_dl_dw2)))
         # Update
         w1 = w1 - mini_batch_dl_dw1.reshape(w1.shape) * LEARNING_RATE
         b1 = b1 - mini_batch_dl_db1.reshape(b1.shape) * LEARNING_RATE

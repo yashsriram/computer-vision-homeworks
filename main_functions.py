@@ -2,7 +2,7 @@ import scipy.io as sio
 import matplotlib.pyplot as plt
 import numpy as np
 from cnn import get_mini_batch, fc, relu, conv, pool2x2, flattening
-from cnn import train_slp_linear, train_slp, train_mlp, train_cnn
+from cnn import train_slp_linear, train_slp, train_mlp, train_mlp2, train_cnn
 
 
 def main_slp_linear():
@@ -94,6 +94,7 @@ def main_mlp():
         if l_pred == label_test[0, i]:
             acc = acc + 1
     accuracy = acc / num_test
+    print(accuracy)
     for i in range(10):
         confusion[:, i] = confusion[:, i] / np.sum(confusion[:, i])
 
