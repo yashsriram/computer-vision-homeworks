@@ -74,10 +74,11 @@ def main_mlp():
     mnist_test = sio.loadmat('./mnist_test.mat')
     im_train, label_train = mnist_train['im_train'], mnist_train['label_train']
     im_test, label_test = mnist_test['im_test'], mnist_test['label_test']
-    batch_size = 32
+    batch_size = 128
+    print('BATCH_SIZE = {}'.format(batch_size))
     im_train, im_test = im_train / 255.0, im_test / 255.0
     mini_batches_x, mini_batches_y = get_mini_batch(im_train, label_train, batch_size)
-    w1, b1, w2, b2 = train_mlp(mini_batches_x, mini_batches_y)
+    w1, b1, w2, b2 = train_mlp(mini_batches_x, mini_batches_y, im_test, label_test)
     sio.savemat('mlp.mat', mdict={'w1': w1, 'b1': b1, 'w2': w2, 'b2': b2})
 
     acc = 0
