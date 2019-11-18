@@ -275,6 +275,11 @@ def train_mlp(mini_batches_x, mini_batches_y):
                                     OUTPUT_SIZE,
                                     MIDDLE_LAYER_SIZE,
                                     INPUT_SIZE, ))
+    # weights = sio.loadmat('./mlp.mat')
+    # w1 = weights['w1']
+    # b1 = weights['b1']
+    # w2 = weights['w2']
+    # b2 = weights['b2']
     w1 = np.random.normal(0, 1, size=(MIDDLE_LAYER_SIZE, INPUT_SIZE))
     b1 = np.random.normal(0, 1, size=(MIDDLE_LAYER_SIZE, 1))
     w2 = np.random.normal(0, 1, size=(OUTPUT_SIZE, MIDDLE_LAYER_SIZE))
