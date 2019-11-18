@@ -253,7 +253,7 @@ def train_mlp(mini_batches_x, mini_batches_y):
     LEARNING_RATE = 0.02
     DECAY_RATE = 0.9
     DECAY_PER_NUM_ITER = 500
-    NUM_ITERATIONS = 15470
+    NUM_ITERATIONS = 18170
     TEST_ITER = 10
     global RELU_E
     RELU_E = 0.9
@@ -463,7 +463,7 @@ def train_cnn(mini_batch_x, mini_batch_y):
 
 if __name__ == '__main__':
     np.random.seed(42)
-    # main.main_slp_linear()
-    # main.main_slp()
+    main.main_slp_linear()
+    main.main_slp()
     main.main_mlp()
     # main.main_cnn()

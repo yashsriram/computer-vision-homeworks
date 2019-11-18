@@ -43,3 +43,7 @@ python3.6 cnn.py  537.21s user 0.64s system 97% cpu 9:12.20 total 0.8965 best_ac
 BATCH_SIZE = 32
 MLP config: LEARNING_RATE = 0.02, DECAY_RATE = 0.9, DECAY_PER_NUM_ITER = 500, NUM_ITERATIONS = 20000, RELU_E = 0.9 TEST_ITER = 10 OUTPUT_SIZE = 10, MIDDLE_LAYER_SIZE = 30, INPUT_SIZE = 196
 Iteration # 19999/20000: latest_accuracy = 0.899, best_accuracy = 0.9035 best_accuracy_iter = 15470
+
+BATCH_SIZE = 32
+MLP config: LEARNING_RATE = 0.02, DECAY_RATE = 0.9, DECAY_PER_NUM_ITER = 500, NUM_ITERATIONS = 20000, RELU_E = 0.9 TEST_ITER = 10 OUTPUT_SIZE = 10, MIDDLE_LAYER_SIZE = 30, INPUT_SIZE = 196
+Iteration # 19999/20000: latest_accuracy = 0.871, best_accuracy = 0.9015 best_accuracy_iter = 18170
