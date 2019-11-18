@@ -91,7 +91,7 @@ def loss_cross_entropy_softmax(x, y):
     return l, dl_dx
 
 
-RELU_E = 0.1
+RELU_E = 0
 
 
 def relu(x):
@@ -244,29 +244,37 @@ def train_slp(mini_batches_x, mini_batches_y):
     return w, b
 
 
-def train_mlp(mini_batches_x, mini_batches_y, im_test, label_test):
+def train_mlp(mini_batches_x, mini_batches_y):
     # Constant hyper-parameters
     OUTPUT_SIZE = 10
     MIDDLE_LAYER_SIZE = 30
     INPUT_SIZE = 196
     # Tunable hyper-parameters
-    LEARNING_RATE = 0.0004
+    LEARNING_RATE = 0.02
     DECAY_RATE = 0.9
-    DECAY_PER_NUM_ITER = 125
-    NUM_ITERATIONS = 2000
-    TEST_ITER = 100
+    DECAY_PER_NUM_ITER = 500
+    NUM_ITERATIONS = 15470
+    TEST_ITER = 10
+    global RELU_E
+    RELU_E = 0.9
     print('MLP config: '
           'LEARNING_RATE = {}, '
           'DECAY_RATE = {}, '
           'DECAY_PER_NUM_ITER = {}, '
           'NUM_ITERATIONS = {}, '
+          'RELU_E = {} '
+          'TEST_ITER = {} '
           'OUTPUT_SIZE = {}, '
           'MIDDLE_LAYER_SIZE = {}, '
-          'INPUT_SIZE = {} '
-          'RELU_E = {} '
-          'TEST_ITER = {}'.format(LEARNING_RATE, DECAY_RATE, DECAY_PER_NUM_ITER, NUM_ITERATIONS, OUTPUT_SIZE,
-                                  MIDDLE_LAYER_SIZE,
-                                  INPUT_SIZE, RELU_E, TEST_ITER))
+          'INPUT_SIZE = {} '.format(LEARNING_RATE,
+                                    DECAY_RATE,
+                                    DECAY_PER_NUM_ITER,
+                                    NUM_ITERATIONS,
+                                    RELU_E,
+                                    TEST_ITER,
+                                    OUTPUT_SIZE,
+                                    MIDDLE_LAYER_SIZE,
+                                    INPUT_SIZE, ))
     w1 = np.random.normal(0, 1, size=(MIDDLE_LAYER_SIZE, INPUT_SIZE))
     b1 = np.random.normal(0, 1, size=(MIDDLE_LAYER_SIZE, 1))
     w2 = np.random.normal(0, 1, size=(OUTPUT_SIZE, MIDDLE_LAYER_SIZE))
@@ -274,28 +282,38 @@ def train_mlp(mini_batches_x, mini_batches_y, im_test, label_test):
     num_mini_batches = len(mini_batches_x)
     loss_values = []
     latest_accuracy = 0
+    best_accuracy = 0
+    best_accuracy_iter = 0
     for iter_i in range(NUM_ITERATIONS):
-        print('Iteration # {}/{}: latest accuracy = {}\r'.format(iter_i, NUM_ITERATIONS, latest_accuracy), end='')
+        print('Iteration # {}/{}: latest_accuracy = {}, best_accuracy = {} best_accuracy_iter = {} \r'.format(iter_i,
+                                                                                                              NUM_ITERATIONS,
+                                                                                                              latest_accuracy,
+                                                                                                              best_accuracy,
+                                                                                                              best_accuracy_iter),
+              end='')
         if (iter_i + 1) % DECAY_PER_NUM_ITER == 0:
             LEARNING_RATE = LEARNING_RATE * DECAY_RATE
-        if (iter_i + 1) % TEST_ITER == 0:
-            acc = 0
-            confusion = np.zeros((10, 10))
-            num_test = im_test.shape[1]
-            for i in range(num_test):
-                x = im_test[:, [i]]
-                pred1 = fc(x, w1, b1)
-                pred2 = relu(pred1)
-                y = fc(pred2, w2, b2)
-                l_pred = np.argmax(y)
-                confusion[l_pred, label_test[0, i]] = confusion[l_pred, label_test[0, i]] + 1
-
-                if l_pred == label_test[0, i]:
-                    acc = acc + 1
-            accuracy = acc / num_test
-            latest_accuracy = accuracy
-            if accuracy >= 0.90:
-                return w1, b1, w2, b2
+        # if iter_i % TEST_ITER == 0:
+        #     acc = 0
+        #     confusion = np.zeros((10, 10))
+        #     num_test = im_test.shape[1]
+        #     for i in range(num_test):
+        #         x = im_test[:, [i]]
+        #         pred1 = fc(x, w1, b1)
+        #         pred2 = relu(pred1)
+        #         y = fc(pred2, w2, b2)
+        #         l_pred = np.argmax(y)
+        #         confusion[l_pred, label_test[0, i]] = confusion[l_pred, label_test[0, i]] + 1
+        #
+        #         if l_pred == label_test[0, i]:
+        #             acc = acc + 1
+        #     accuracy = acc / num_test
+        #     latest_accuracy = accuracy
+        #     if latest_accuracy > best_accuracy:
+        #         best_accuracy = latest_accuracy
+        #         best_accuracy_iter = iter_i
+        #     if accuracy >= 0.90:
+        #         return w1, b1, w2, b2
 
         # Determining current mini-batch
         curr_mini_batch_x = mini_batches_x[iter_i % num_mini_batches]
@@ -440,7 +458,7 @@ def train_cnn(mini_batch_x, mini_batch_y):
 
 if __name__ == '__main__':
     np.random.seed(42)
-    main.main_slp_linear()
-    main.main_slp()
-    # main.main_mlp()
+    # main.main_slp_linear()
+    # main.main_slp()
+    main.main_mlp()
     # main.main_cnn()
