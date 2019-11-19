@@ -127,7 +127,18 @@ def conv_backward(dl_dy, x, w_conv, b_conv, y):
 
 
 def pool2x2(x):
-    # TO DO
+    h, w, c = x.shape
+    y = np.zeros((int(h / 2), int(w / 2), c))
+    if h % 2 == 1:
+        h -= 1
+    if w % 2 == 1:
+        w -= 1
+    for ci in range(c):
+        channel = x[:, :, ci]
+        for hi in range(0, h, 2):
+            for wi in range(0, w, 2):
+                patch = channel[hi: hi + 2, wi:  wi + 2]
+                y[int(hi / 2), int(wi / 2), ci] = np.max(patch)
     return y
 
 
@@ -463,7 +474,7 @@ def train_cnn(mini_batch_x, mini_batch_y):
 
 if __name__ == '__main__':
     np.random.seed(42)
-    main.main_slp_linear()
-    main.main_slp()
-    main.main_mlp()
-    # main.main_cnn()
+    # main.main_slp_linear()
+    # main.main_slp()
+    # main.main_mlp()
+    main.main_cnn()
