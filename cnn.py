@@ -164,12 +164,12 @@ def pool2x2_backward(dl_dy, x, y):
 
 
 def flattening(x):
-    # TO DO
+    y = x.reshape(-1, order='F')
     return y
 
 
 def flattening_backward(dl_dy, x, y):
-    # TO DO
+    dl_dx = dl_dy.reshape(x.shape, order='F')
     return dl_dx
 
 
