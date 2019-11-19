@@ -1,7 +1,7 @@
 import scipy.io as sio
 import matplotlib.pyplot as plt
 import numpy as np
-from cnn import get_mini_batch, fc, relu, conv, pool2x2, flattening
+from cnn import get_mini_batch, fc, relu, conv, pool2x2, pool2x2_backward, flattening
 from cnn import train_slp_linear, train_slp, train_mlp, train_mlp2, train_cnn
 
 
@@ -107,14 +107,23 @@ def main_cnn():
     mnist_test = sio.loadmat('./mnist_test.mat')
     im_train, label_train = mnist_train['im_train'], mnist_train['label_train']
     im_test, label_test = mnist_test['im_test'], mnist_test['label_test']
-    # plt.imshow(mnist_train['im_train'][:, 0].reshape((14, 14), order='F'), cmap='gray')
-    # plt.show()
-    # y = pool2x2(im_train[:, 0].reshape((14, 14, 1), order='F'))
-    # plt.imshow(y.reshape(7, 7, order='F'), cmap='gray')
-    # plt.show()
-    # exit(-1)
     batch_size = 32
     im_train, im_test = im_train / 255.0, im_test / 255.0
+    # plt.imshow(mnist_train['im_train'][:, 0].reshape((14, 14), order='F'), cmap='gray')
+    # plt.show()
+    # x = im_train[:, 0].reshape((14, 14, 1), order='F')
+    # y = pool2x2(x)
+    # dl_dy = np.random.rand(7, 7, 1)
+    # dl_dx = pool2x2_backward(dl_dy, x, y)
+    # plt.imshow(x[:, :, 0], cmap='gray')
+    # plt.show()
+    # plt.imshow(y[:, :, 0], cmap='gray')
+    # plt.show()
+    # plt.imshow(dl_dy[:, :, 0], cmap='gray')
+    # plt.show()
+    # plt.imshow(dl_dx[:, :, 0], cmap='gray')
+    # plt.show()
+    # exit(-1)
     mini_batches_x, mini_batches_y = get_mini_batch(im_train, label_train, batch_size)
     w_conv, b_conv, w_fc, b_fc = train_cnn(mini_batches_x, mini_batches_y)
     sio.savemat('cnn.mat', mdict={'w_conv': w_conv, 'b_conv': b_conv, 'w_fc': w_fc, 'b_fc': b_fc})

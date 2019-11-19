@@ -61,7 +61,7 @@ def fc_backward(dl_dy, x, w, b, y):
     # [ 0 X 0 0 ... 0 (n times)]
     #           (n times)
     # [ 0 0 0 0 ... X (n times)]
-    dl_dw = np.zeros((n, m))
+    dl_dw = np.zeros(w.shape)
     for i in range(n):
         for j in range(m):
             dl_dw[i, j] = dl_dy[i] * x[j]
@@ -129,6 +129,7 @@ def conv_backward(dl_dy, x, w_conv, b_conv, y):
 def pool2x2(x):
     h, w, c = x.shape
     y = np.zeros((int(h / 2), int(w / 2), c))
+    # remove last row and column from consideration if odd
     if h % 2 == 1:
         h -= 1
     if w % 2 == 1:
@@ -138,12 +139,27 @@ def pool2x2(x):
         for hi in range(0, h, 2):
             for wi in range(0, w, 2):
                 patch = channel[hi: hi + 2, wi:  wi + 2]
+                # pick max value from patch and put it in y
                 y[int(hi / 2), int(wi / 2), ci] = np.max(patch)
     return y
 
 
 def pool2x2_backward(dl_dy, x, y):
-    # TO DO
+    dl_dx = np.zeros(x.shape)
+    h, w, c = x.shape
+    # remove last row and column from consideration if odd
+    if h % 2 == 1:
+        h -= 1
+    if w % 2 == 1:
+        w -= 1
+    for ci in range(c):
+        channel = x[:, :, ci]
+        for hi in range(0, h, 2):
+            for wi in range(0, w, 2):
+                patch = channel[hi: hi + 2, wi:  wi + 2]
+                # pick max value's position from patch and put corresponding dl_dy in it
+                max_pos = np.argmax(patch)
+                dl_dx[hi + int(max_pos / 2), wi + max_pos % 2, ci] = dl_dy[int(hi / 2), int(wi / 2), ci]
     return dl_dx
 
 
