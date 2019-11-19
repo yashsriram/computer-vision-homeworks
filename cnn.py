@@ -117,7 +117,32 @@ def relu_backward(dl_dy, x, y):
 
 
 def conv(x, w_conv, b_conv):
-    # TO DO
+    h, w, c1, c2 = w_conv.shape
+    # assert that filters have odd numbered dimensions so that there is a single center point
+    assert (h % 2 == 1)
+    assert (w % 2 == 1)
+    # pad the H and W axis not the C axis with appropriate number of zeros as determined by h and w axes of filter
+    padding_h = int(h / 2)
+    padding_w = int(w / 2)
+    padded_x = np.pad(x, ((padding_h, padding_h), (padding_w, padding_w), (0, 0)), mode='constant')
+
+    H_padded, W_padded, _ = padded_x.shape
+    H, W, _ = x.shape
+    y = np.zeros((H, W, c2))
+    for c2_i in range(c2):
+        filter_i = w_conv[:, :, :, c2_i]
+        # iterating in padded input with pivot as original input cells
+        for pos_h in range(padding_h, H_padded - padding_h):
+            for pos_w in range(padding_w, W_padded - padding_w):
+                # determine voxel from input to be convolved with the filter
+                voxel = padded_x[pos_h - padding_h: pos_h + padding_h + 1,
+                        pos_w - padding_w: pos_w + padding_w + 1, :]
+                # convolve (element wise multiply and sum) filter and voxel
+                conved = np.sum(np.multiply(voxel, filter_i))
+                # add bias
+                conved += b_conv[c2_i, 0]
+                # put the convolved value in proper position in output
+                y[pos_h - padding_h, pos_w - padding_w, c2_i] = conved
     return y
 
 
