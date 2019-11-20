@@ -472,24 +472,27 @@ def train_cnn(mini_batches_x, mini_batches_y):
     LEARNING_RATE = 0.0001
     DECAY_RATE = 0.9
     DECAY_PER_NUM_ITER = 1000
-    NUM_ITERATIONS = 100
-    TEST_ITER = 10
-    print('MLP config: '
+    NUM_ITERATIONS = 2000
+    print('CNN config: '
           'LEARNING_RATE = {}, '
           'DECAY_RATE = {}, '
           'DECAY_PER_NUM_ITER = {}, '
           'NUM_ITERATIONS = {}, '
           'RELU_E = {} '
-          'TEST_ITER = {} '
-          'OUTPUT_SIZE = {}, '
+          'W_CONV_SHAPE = {} '
+          'B_CONV_SHAPE = {} '
+          'OUTPUT_SIZE = {} '
+          'PEN_ULTIMATE_SIZE = {} '
           'INPUT_SIZE = {} '.format(LEARNING_RATE,
-                                    DECAY_RATE,
-                                    DECAY_PER_NUM_ITER,
-                                    NUM_ITERATIONS,
-                                    RELU_E,
-                                    TEST_ITER,
-                                    OUTPUT_SIZE,
-                                    INPUT_SIZE, ))
+                                   DECAY_RATE,
+                                   DECAY_PER_NUM_ITER,
+                                   NUM_ITERATIONS,
+                                   RELU_E,
+                                   W_CONV_SHAPE,
+                                   B_CONV_SHAPE,
+                                   OUTPUT_SIZE,
+                                   PEN_ULTIMATE_SIZE,
+                                   INPUT_SIZE))
     w_conv = np.random.normal(0, 1, size=W_CONV_SHAPE)
     b_conv = np.random.normal(0, 1, size=B_CONV_SHAPE)
     w_fc = np.random.normal(0, 1, size=(OUTPUT_SIZE, PEN_ULTIMATE_SIZE))
@@ -544,7 +547,7 @@ def train_cnn(mini_batches_x, mini_batches_y):
 
             # Sum gradients
             mini_batch_dl_dw_conv += dl_dw_conv
-            mini_batch_dl_db_conv += dl_db_conv
+            # mini_batch_dl_db_conv += dl_db_conv
             mini_batch_dl_dw_fc += dl_dw_fc
             mini_batch_dl_db_fc += dl_db_fc
 
@@ -553,7 +556,7 @@ def train_cnn(mini_batches_x, mini_batches_y):
         # Update
         # print(w_conv[0, 0, 0, 0], b_conv[0], w_fc[0][0], b_fc[0])
         w_conv = w_conv - mini_batch_dl_dw_conv * LEARNING_RATE
-        b_conv = b_conv - mini_batch_dl_db_conv * LEARNING_RATE
+        # b_conv = b_conv - mini_batch_dl_db_conv * LEARNING_RATE
         w_fc = w_fc - mini_batch_dl_dw_fc.reshape(w_fc.shape) * LEARNING_RATE
         b_fc = b_fc - mini_batch_dl_db_fc.reshape(b_fc.shape) * LEARNING_RATE
 
