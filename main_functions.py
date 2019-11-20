@@ -147,6 +147,7 @@ def main_cnn():
     confusion = np.zeros((10, 10))
     num_test = im_test.shape[1]
     for i in range(num_test):
+        print('Test # {}/{}: \r'.format(i, num_test), end='')
         x = im_test[:, [i]].reshape((14, 14, 1), order='F')
         pred1 = conv(x, w_conv, b_conv)  # (14, 14, 3)
         pred2 = relu(pred1)  # (14, 14, 3)
@@ -158,6 +159,7 @@ def main_cnn():
         if l_pred == label_test[0, i]:
             acc = acc + 1
     accuracy = acc / num_test
+    print(accuracy)
     for i in range(10):
         confusion[:, i] = confusion[:, i] / np.sum(confusion[:, i])
 

@@ -144,7 +144,7 @@ def conv(x, w_conv, b_conv):
                 # convolve (element wise multiply and sum) filter and voxel
                 conved = np.sum(np.multiply(voxel, filter_i))
                 # add bias
-                conved += b_conv[c2_i, 0]
+                conved += b_conv[c2_i]
                 # put the convolved value in proper position in output
                 y[pos_h - padding_h, pos_w - padding_w, c2_i] = conved
     return y
@@ -166,7 +166,7 @@ def conv_backward(dl_dy, x, w_conv, b_conv, y):
 
     for c2_i in range(c2):
         L = dl_dy[:, :, c2_i]
-        dl_db[c2_i, 0] = np.sum(L)
+        dl_db[c2_i] = np.sum(L)
         for c1_i in range(c1):
             # note: padding_h is also equal to step(h / 2)
             # note: padding_w is also equal to step(w / 2)
@@ -217,6 +217,7 @@ def pool2x2_backward(dl_dy, x, y):
 
 def flattening(x):
     y = x.reshape(-1, order='F')
+    y = y.reshape((y.shape[0], 1))
     return y
 
 
@@ -536,8 +537,110 @@ def train_mlp2(mini_batches_x, mini_batches_y):
     return w1, b1, w2, b2
 
 
-def train_cnn(mini_batch_x, mini_batch_y):
-    # TO DO
+def train_cnn(mini_batches_x, mini_batches_y):
+    # Constant hyper-parameters
+    W_CONV_SHAPE = (3, 3, 1, 3)
+    B_CONV_SHAPE = 3
+    OUTPUT_SIZE = 10
+    PEN_ULTIMATE_SIZE = 147
+    INPUT_SIZE = 196
+    # Tunable hyper-parameters
+    global RELU_E
+    LEARNING_RATE = 0.1
+    DECAY_RATE = 0.9
+    DECAY_PER_NUM_ITER = 1000
+    NUM_ITERATIONS = 5
+    TEST_ITER = 10
+    print('MLP config: '
+          'LEARNING_RATE = {}, '
+          'DECAY_RATE = {}, '
+          'DECAY_PER_NUM_ITER = {}, '
+          'NUM_ITERATIONS = {}, '
+          'RELU_E = {} '
+          'TEST_ITER = {} '
+          'OUTPUT_SIZE = {}, '
+          'INPUT_SIZE = {} '.format(LEARNING_RATE,
+                                    DECAY_RATE,
+                                    DECAY_PER_NUM_ITER,
+                                    NUM_ITERATIONS,
+                                    RELU_E,
+                                    TEST_ITER,
+                                    OUTPUT_SIZE,
+                                    INPUT_SIZE, ))
+    w_conv = np.random.normal(0, 1, size=W_CONV_SHAPE)
+    b_conv = np.random.normal(0, 1, size=B_CONV_SHAPE)
+    w_fc = np.random.normal(0, 1, size=(OUTPUT_SIZE, PEN_ULTIMATE_SIZE))
+    b_fc = np.random.normal(0, 1, size=(OUTPUT_SIZE, 1))
+    num_mini_batches = len(mini_batches_x)
+    loss_values = []
+    for iter_i in range(NUM_ITERATIONS):
+        print('Iteration # {}/{} \r'.format(iter_i, NUM_ITERATIONS), end='')
+        if (iter_i + 1) % DECAY_PER_NUM_ITER == 0:
+            LEARNING_RATE = LEARNING_RATE * DECAY_RATE
+
+        # Determining current mini-batch
+        curr_mini_batch_x = mini_batches_x[iter_i % num_mini_batches]
+        curr_mini_batch_y = mini_batches_y[iter_i % num_mini_batches]
+        curr_mini_batch_size = curr_mini_batch_x.shape[1]
+        # Current mini-batch gradients
+        mini_batch_dl_dw_conv = np.zeros(W_CONV_SHAPE)
+        mini_batch_dl_db_conv = np.zeros(B_CONV_SHAPE)
+        mini_batch_dl_dw_fc = np.zeros(OUTPUT_SIZE * PEN_ULTIMATE_SIZE)
+        mini_batch_dl_db_fc = np.zeros(OUTPUT_SIZE)
+        mini_batch_loss = 0
+        for idx in range(curr_mini_batch_size):
+            x = curr_mini_batch_x[:, idx].reshape(14, 14, 1)
+            y = curr_mini_batch_y[:, idx]
+            # Forward prop
+            # Conv 1
+            conv_x = conv(x, w_conv, b_conv)
+            # ReLU 1
+            relu_conv_x = relu(conv_x)
+            # Pool 1
+            pool_relu_conv_x = pool2x2(relu_conv_x)
+            # Flatten 1
+            flatten_pool_relu_conv_x = flattening(pool_relu_conv_x)
+            # FC 1
+            fc_flatten_pool_relu_conv_x = fc(flatten_pool_relu_conv_x, w_fc, b_fc)
+
+            # Loss
+            l, dl_dy = loss_cross_entropy_softmax(fc_flatten_pool_relu_conv_x.reshape(-1), y)
+            mini_batch_loss += np.abs(l)
+
+            # Back prop
+            # FC 1
+            dl_dy, dl_dw_fc, dl_db_fc = fc_backward(dl_dy, flatten_pool_relu_conv_x, w_fc, b_fc, fc_flatten_pool_relu_conv_x)
+            # Flatten 1
+            dl_dy = flattening_backward(dl_dy, pool_relu_conv_x, flatten_pool_relu_conv_x)
+            # Pool 1
+            dl_dy = pool2x2_backward(dl_dy, relu_conv_x, pool_relu_conv_x)
+            # ReLu 1
+            dl_dy = relu_backward(dl_dy, conv_x, relu_conv_x)
+            # Conv 1
+            dl_dw_conv, dl_db_conv = conv_backward(dl_dy, x, w_conv, b_conv, conv_x)
+
+            # Sum gradients
+            mini_batch_dl_dw_conv += dl_dw_conv
+            mini_batch_dl_db_conv += dl_db_conv
+            mini_batch_dl_dw_fc += dl_dw_fc
+            mini_batch_dl_db_fc += dl_db_fc
+
+        loss_values.append(mini_batch_loss)
+        # Update
+        w_conv = w_conv - mini_batch_dl_dw_conv * LEARNING_RATE
+        b_conv = b_conv - mini_batch_dl_db_conv * LEARNING_RATE
+        w_fc = w_fc - mini_batch_dl_dw_fc.reshape(w_fc.shape) * LEARNING_RATE
+        b_fc = b_fc - mini_batch_dl_db_fc.reshape(b_fc.shape) * LEARNING_RATE
+        # print(np.mean(w1), np.mean(b1), np.mean(w2), np.mean(b2))
+
+    print()
+    axes = plt.gca()
+    axes.set_ylim([0, 100])
+    plt.xlabel('iterations', fontsize=18)
+    plt.ylabel('training loss', fontsize=16)
+    plt.plot(loss_values)
+    plt.show()
+
     return w_conv, b_conv, w_fc, b_fc
 
 
