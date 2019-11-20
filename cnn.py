@@ -158,22 +158,23 @@ def conv_backward(dl_dy, x, w_conv, b_conv, y):
     h, w, c1, c2 = w_conv.shape
     H, W, c1 = x.shape
     dl_dw = np.zeros(w_conv.shape)
+    dl_db = np.zeros(b_conv.shape)
     # pad the H and W axis not the C axis with appropriate number of zeros as determined by h and w axes of filter
     padding_h = int(h / 2)
     padding_w = int(w / 2)
     padded_x = np.pad(x, ((padding_h, padding_h), (padding_w, padding_w), (0, 0)), mode='constant')
 
     for c2_i in range(c2):
+        L = dl_dy[:, :, c2_i]
+        dl_db[c2_i, 0] = np.sum(L)
         for c1_i in range(c1):
             # note: padding_h is also equal to step(h / 2)
             # note: padding_w is also equal to step(w / 2)
             for hi in range(h):
                 for wi in range(w):
-                    L = dl_dy[:, :, c2_i]
                     X = padded_x[hi: hi + H, wi:wi + W, c1_i]
                     dl_dw[hi, wi, c1_i, c2_i] = np.sum(np.multiply(L, X))
 
-    dl_db = None
     return dl_dw, dl_db
 
 
@@ -368,12 +369,13 @@ def train_mlp(mini_batches_x, mini_batches_y):
     best_accuracy = 0
     best_accuracy_iter = 0
     for iter_i in range(NUM_ITERATIONS):
-        print('Iteration # {}/{}: latest_accuracy = {}, best_accuracy = {} best_accuracy_iter = {} \r'.format(iter_i,
-                                                                                                              NUM_ITERATIONS,
-                                                                                                              latest_accuracy,
-                                                                                                              best_accuracy,
-                                                                                                              best_accuracy_iter),
-              end='')
+        # print('Iteration # {}/{}: latest_accuracy = {}, best_accuracy = {} best_accuracy_iter = {} \r'.format(iter_i,
+        #                                                                                                       NUM_ITERATIONS,
+        #                                                                                                       latest_accuracy,
+        #                                                                                                       best_accuracy,
+        #                                                                                                       best_accuracy_iter),
+        #       end='')
+        print('Iteration # {}/{}: \r'.format(iter_i, NUM_ITERATIONS), end='')
         if (iter_i + 1) % DECAY_PER_NUM_ITER == 0:
             LEARNING_RATE = LEARNING_RATE * DECAY_RATE
         # if iter_i % TEST_ITER == 0:
