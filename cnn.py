@@ -107,12 +107,14 @@ def relu(x):
 
 
 def relu_backward(dl_dy, x, y):
-    dl_dx = np.zeros(dl_dy.shape)
-    for i, dl_dy_i in enumerate(dl_dy):
+    dl_dy_flat = dl_dy.reshape(-1)
+    dl_dx = np.zeros(dl_dy_flat.shape)
+    for i, dl_dy_i in enumerate(dl_dy_flat):
         if dl_dy_i >= 0:
             dl_dx[i] = dl_dy_i
         else:
             dl_dx[i] = dl_dy_i * RELU_E
+    dl_dx = dl_dx.reshape(dl_dy.shape)
     return dl_dx
 
 
@@ -135,6 +137,8 @@ def conv(x, w_conv, b_conv):
         for pos_h in range(padding_h, H_padded - padding_h):
             for pos_w in range(padding_w, W_padded - padding_w):
                 # determine voxel from input to be convolved with the filter
+                # note: padding_h is also equal to step(h / 2)
+                # note: padding_w is also equal to step(w / 2)
                 voxel = padded_x[pos_h - padding_h: pos_h + padding_h + 1,
                         pos_w - padding_w: pos_w + padding_w + 1, :]
                 # convolve (element wise multiply and sum) filter and voxel
@@ -147,7 +151,29 @@ def conv(x, w_conv, b_conv):
 
 
 def conv_backward(dl_dy, x, w_conv, b_conv, y):
-    # TO DO
+    # assert dimension sanity
+    assert (dl_dy.shape == y.shape)
+    assert (y.shape[0] == x.shape[0] and y.shape[1] == x.shape[1])
+    # initialize dl_dw
+    h, w, c1, c2 = w_conv.shape
+    H, W, c1 = x.shape
+    dl_dw = np.zeros(w_conv.shape)
+    # pad the H and W axis not the C axis with appropriate number of zeros as determined by h and w axes of filter
+    padding_h = int(h / 2)
+    padding_w = int(w / 2)
+    padded_x = np.pad(x, ((padding_h, padding_h), (padding_w, padding_w), (0, 0)), mode='constant')
+
+    for c2_i in range(c2):
+        for c1_i in range(c1):
+            # note: padding_h is also equal to step(h / 2)
+            # note: padding_w is also equal to step(w / 2)
+            for hi in range(h):
+                for wi in range(w):
+                    L = dl_dy[:, :, c2_i]
+                    X = padded_x[hi: hi + H, wi:wi + W, c1_i]
+                    dl_dw[hi, wi, c1_i, c2_i] = np.sum(np.multiply(L, X))
+
+    dl_db = None
     return dl_dw, dl_db
 
 

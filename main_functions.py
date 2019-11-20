@@ -1,7 +1,7 @@
 import scipy.io as sio
 import matplotlib.pyplot as plt
 import numpy as np
-from cnn import get_mini_batch, fc, relu, conv, pool2x2, pool2x2_backward, flattening
+from cnn import get_mini_batch, fc, relu, conv, conv_backward, pool2x2, pool2x2_backward, flattening
 from cnn import train_slp_linear, train_slp, train_mlp, train_mlp2, train_cnn
 
 
@@ -123,15 +123,19 @@ def main_cnn():
     # plt.show()
     # plt.imshow(dl_dx[:, :, 0], cmap='gray')
     # plt.show()
-    # x = np.arange(25).reshape((5, 5, 1))
-    # w_conv = np.arange(27).reshape((3, 3, 1, 3))
-    # b_conv = np.arange(3).reshape((3, 1))
-    # y = conv(x, w_conv, b_conv)
-    # print(x)
-    # print(w_conv)
-    # print(b_conv)
-    # print(y)
-    # exit(-1)
+    x = np.arange(25).reshape((5, 5, 1))
+    w_conv = np.arange(27).reshape((3, 3, 1, 3))
+    b_conv = np.arange(3).reshape((3, 1))
+    y = conv(x, w_conv, b_conv)
+    dl_dy = np.random.random((5, 5, 3))
+    dl_dw, dl_db = conv_backward(dl_dy, x, w_conv, b_conv, y)
+    print(x)
+    print(w_conv)
+    print(b_conv)
+    print(y)
+    print(dl_dw.shape)
+    print(dl_dw)
+    exit(-1)
     mini_batches_x, mini_batches_y = get_mini_batch(im_train, label_train, batch_size)
     w_conv, b_conv, w_fc, b_fc = train_cnn(mini_batches_x, mini_batches_y)
     sio.savemat('cnn.mat', mdict={'w_conv': w_conv, 'b_conv': b_conv, 'w_fc': w_fc, 'b_fc': b_fc})
