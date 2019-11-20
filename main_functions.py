@@ -2,7 +2,7 @@ import scipy.io as sio
 import matplotlib.pyplot as plt
 import numpy as np
 from cnn import get_mini_batch, fc, relu, conv, conv_backward, pool2x2, pool2x2_backward, flattening
-from cnn import train_slp_linear, train_slp, train_mlp, train_mlp2, train_cnn
+from cnn import train_slp_linear, train_slp, train_mlp, train_cnn
 
 
 def main_slp_linear():
@@ -147,10 +147,11 @@ def main_cnn():
     confusion = np.zeros((10, 10))
     num_test = im_test.shape[1]
     for i in range(num_test):
-        print('Test # {}/{}: \r'.format(i, num_test), end='')
+        print('Test # {}/{}: \r'.format(i + 1, num_test), end='')
         x = im_test[:, [i]].reshape((14, 14, 1), order='F')
         pred1 = conv(x, w_conv, b_conv)  # (14, 14, 3)
         pred2 = relu(pred1)  # (14, 14, 3)
+        # pred2 = relu(x)  # (14, 14, 3)
         pred3 = pool2x2(pred2)  # (7, 7, 3)
         pred4 = flattening(pred3)  # (147, 1)
         y = fc(pred4, w_fc, b_fc)  # (10, 1)

@@ -459,90 +459,120 @@ def train_mlp(mini_batches_x, mini_batches_y):
     return w1, b1, w2, b2
 
 
-def train_mlp2(mini_batches_x, mini_batches_y):
-    LEARNING_RATE = 0.002
-    DECAY_RATE = 0.9
-    NUM_ITERATIONS = 100
-    OUTPUT_SIZE = 10
-    MIDDLE_LAYER_SIZE = 30
-    INPUT_SIZE = 196
-    print('MLP config: '
-          'LEARNING_RATE = {}, '
-          'DECAY_RATE = {}, '
-          'NUM_ITERATIONS = {}, '
-          'OUTPUT_SIZE = {}, '
-          'MIDDLE_LAYER_SIZE = {}, '
-          'INPUT_SIZE = {}'.format(LEARNING_RATE, DECAY_RATE, NUM_ITERATIONS, OUTPUT_SIZE, MIDDLE_LAYER_SIZE,
-                                   INPUT_SIZE))
-    w1 = np.random.normal(0, 1, size=(MIDDLE_LAYER_SIZE, INPUT_SIZE))
-    b1 = np.random.normal(0, 1, size=(MIDDLE_LAYER_SIZE, 1))
-    w2 = np.random.normal(0, 1, size=(OUTPUT_SIZE, MIDDLE_LAYER_SIZE))
-    b2 = np.random.normal(0, 1, size=(OUTPUT_SIZE, 1))
-    num_mini_batches = len(mini_batches_x)
-    loss_values = []
-    for iter_i in range(NUM_ITERATIONS):
-        print('Iteration # {}/{}\r'.format(iter_i, NUM_ITERATIONS), end='')
-        if iter_i + 1 % 1000 == 0:
-            LEARNING_RATE = LEARNING_RATE * DECAY_RATE
-        # Determining current mini-batch
-        curr_mini_batch_x = mini_batches_x[iter_i % num_mini_batches]
-        curr_mini_batch_y = mini_batches_y[iter_i % num_mini_batches]
-        curr_mini_batch_size = curr_mini_batch_x.shape[1]
-        # Current mini-batch gradients
-        mini_batch_dl_dw1 = np.zeros(MIDDLE_LAYER_SIZE * INPUT_SIZE)
-        mini_batch_dl_db1 = np.zeros(MIDDLE_LAYER_SIZE)
-        mini_batch_dl_dw2 = np.zeros(OUTPUT_SIZE * MIDDLE_LAYER_SIZE)
-        mini_batch_dl_db2 = np.zeros(OUTPUT_SIZE)
-        mini_batch_loss = 0
-        for idx in range(curr_mini_batch_size):
-            x = curr_mini_batch_x[:, idx]
-            y = curr_mini_batch_y[:, idx]
-            # Forward prop
-            # FC 1
-            fc_x = fc(x.reshape(INPUT_SIZE, 1), w1, b1).reshape(-1)
-            # FC 2
-            fc_relu_fc_x = fc(fc_x.reshape(MIDDLE_LAYER_SIZE, 1), w2, b2).reshape(-1)
-
-            # Loss
-            l, dl_dy = loss_cross_entropy_softmax(fc_relu_fc_x, y)
-            mini_batch_loss += np.abs(l)
-
-            # Back prop
-            # FC 2
-            dl_dy, dl_dw2, dl_db2 = fc_backward(dl_dy, fc_x, w2, b2, fc_relu_fc_x)
-            # FC 2
-            _, dl_dw1, dl_db1 = fc_backward(dl_dy, x, w1, b1, fc_x)
-
-            # Sum gradients
-            mini_batch_dl_dw1 += dl_dw1
-            mini_batch_dl_db1 += dl_db1
-            mini_batch_dl_dw2 += dl_dw2
-            mini_batch_dl_db2 += dl_db2
-        loss_values.append(mini_batch_loss)
-        # print(np.sum(np.abs(mini_batch_dl_dw1)), np.sum(np.abs(mini_batch_dl_dw2)))
-        # Update
-        w1 = w1 - mini_batch_dl_dw1.reshape(w1.shape) * LEARNING_RATE
-        b1 = b1 - mini_batch_dl_db1.reshape(b1.shape) * LEARNING_RATE
-        w2 = w2 - mini_batch_dl_dw2.reshape(w2.shape) * LEARNING_RATE
-        b2 = b2 - mini_batch_dl_db2.reshape(b2.shape) * LEARNING_RATE
-
-    print()
-    axes = plt.gca()
-    axes.set_ylim([0, 100])
-    plt.xlabel('iterations', fontsize=18)
-    plt.ylabel('training loss', fontsize=16)
-    plt.plot(loss_values)
-    plt.show()
-
-    return w1, b1, w2, b2
-
-
 def train_cnn(mini_batches_x, mini_batches_y):
     # Constant hyper-parameters
     W_CONV_SHAPE = (3, 3, 1, 3)
     B_CONV_SHAPE = 3
     OUTPUT_SIZE = 10
     PEN_ULTIMATE_SIZE = 147
+    INPUT_SIZE = 196
+    # Tunable hyper-parameters
+    global RELU_E
+    RELU_E = 0.5
+    LEARNING_RATE = 0.0001
+    DECAY_RATE = 0.9
+    DECAY_PER_NUM_ITER = 1000
+    NUM_ITERATIONS = 100
+    TEST_ITER = 10
+    print('MLP config: '
+          'LEARNING_RATE = {}, '
+          'DECAY_RATE = {}, '
+          'DECAY_PER_NUM_ITER = {}, '
+          'NUM_ITERATIONS = {}, '
+          'RELU_E = {} '
+          'TEST_ITER = {} '
+          'OUTPUT_SIZE = {}, '
+          'INPUT_SIZE = {} '.format(LEARNING_RATE,
+                                    DECAY_RATE,
+                                    DECAY_PER_NUM_ITER,
+                                    NUM_ITERATIONS,
+                                    RELU_E,
+                                    TEST_ITER,
+                                    OUTPUT_SIZE,
+                                    INPUT_SIZE, ))
+    w_conv = np.random.normal(0, 1, size=W_CONV_SHAPE)
+    b_conv = np.random.normal(0, 1, size=B_CONV_SHAPE)
+    w_fc = np.random.normal(0, 1, size=(OUTPUT_SIZE, PEN_ULTIMATE_SIZE))
+    b_fc = np.random.normal(0, 1, size=(OUTPUT_SIZE, 1))
+    num_mini_batches = len(mini_batches_x)
+    loss_values = []
+    for iter_i in range(NUM_ITERATIONS):
+        if (iter_i + 1) % DECAY_PER_NUM_ITER == 0:
+            LEARNING_RATE = LEARNING_RATE * DECAY_RATE
+
+        # Determining current mini-batch
+        curr_mini_batch_x = mini_batches_x[iter_i % num_mini_batches]
+        curr_mini_batch_y = mini_batches_y[iter_i % num_mini_batches]
+        curr_mini_batch_size = curr_mini_batch_x.shape[1]
+        # Current mini-batch gradients
+        mini_batch_dl_dw_conv = np.zeros(W_CONV_SHAPE)
+        mini_batch_dl_db_conv = np.zeros(B_CONV_SHAPE)
+        mini_batch_dl_dw_fc = np.zeros(OUTPUT_SIZE * PEN_ULTIMATE_SIZE)
+        mini_batch_dl_db_fc = np.zeros(OUTPUT_SIZE)
+        mini_batch_loss = 0
+        for idx in range(curr_mini_batch_size):
+            x = curr_mini_batch_x[:, idx].reshape((14, 14, 1), order='F')
+            y = curr_mini_batch_y[:, idx]
+            # Forward prop
+            # Conv 1
+            conv_x = conv(x, w_conv, b_conv)
+            # ReLU 1
+            relu_conv_x = relu(conv_x)
+            # Pool 1
+            pool_relu_conv_x = pool2x2(relu_conv_x)
+            # Flatten 1
+            flatten_pool_relu_conv_x = flattening(pool_relu_conv_x)
+            # FC 1
+            fc_flatten_pool_relu_conv_x = fc(flatten_pool_relu_conv_x, w_fc, b_fc)
+
+            # Loss
+            l, dl_dy = loss_cross_entropy_softmax(fc_flatten_pool_relu_conv_x.reshape(-1), y)
+            mini_batch_loss += np.abs(l)
+
+            # Back prop
+            # FC 1
+            dl_dy, dl_dw_fc, dl_db_fc = fc_backward(dl_dy, flatten_pool_relu_conv_x, w_fc, b_fc,
+                                                    fc_flatten_pool_relu_conv_x)
+            # Flatten 1
+            dl_dy = flattening_backward(dl_dy, pool_relu_conv_x, flatten_pool_relu_conv_x)
+            # Pool 1
+            dl_dy = pool2x2_backward(dl_dy, relu_conv_x, pool_relu_conv_x)
+            # ReLu 1
+            dl_dy = relu_backward(dl_dy, conv_x, relu_conv_x)
+            # Conv 1
+            dl_dw_conv, dl_db_conv = conv_backward(dl_dy, x, w_conv, b_conv, conv_x)
+
+            # Sum gradients
+            mini_batch_dl_dw_conv += dl_dw_conv
+            mini_batch_dl_db_conv += dl_db_conv
+            mini_batch_dl_dw_fc += dl_dw_fc
+            mini_batch_dl_db_fc += dl_db_fc
+
+        print('Iteration # {}/{} loss = {} \r'.format(iter_i + 1, NUM_ITERATIONS, mini_batch_loss), end='')
+        loss_values.append(mini_batch_loss)
+        # Update
+        # print(w_conv[0, 0, 0, 0], b_conv[0], w_fc[0][0], b_fc[0])
+        w_conv = w_conv - mini_batch_dl_dw_conv * LEARNING_RATE
+        b_conv = b_conv - mini_batch_dl_db_conv * LEARNING_RATE
+        w_fc = w_fc - mini_batch_dl_dw_fc.reshape(w_fc.shape) * LEARNING_RATE
+        b_fc = b_fc - mini_batch_dl_db_fc.reshape(b_fc.shape) * LEARNING_RATE
+
+    print()
+    axes = plt.gca()
+    plt.xlabel('iterations', fontsize=18)
+    plt.ylabel('training loss', fontsize=16)
+    plt.plot(loss_values)
+    plt.show()
+
+    return w_conv, b_conv, w_fc, b_fc
+
+
+def train_cnn2(mini_batches_x, mini_batches_y):
+    # Constant hyper-parameters
+    W_CONV_SHAPE = (3, 3, 1, 3)
+    B_CONV_SHAPE = 3
+    OUTPUT_SIZE = 10
+    PEN_ULTIMATE_SIZE = 49
     INPUT_SIZE = 196
     # Tunable hyper-parameters
     global RELU_E
@@ -592,10 +622,10 @@ def train_cnn(mini_batches_x, mini_batches_y):
             x = curr_mini_batch_x[:, idx].reshape(14, 14, 1)
             y = curr_mini_batch_y[:, idx]
             # Forward prop
-            # Conv 1
-            conv_x = conv(x, w_conv, b_conv)
+            # # Conv 1
+            # conv_x = conv(x, w_conv, b_conv)
             # ReLU 1
-            relu_conv_x = relu(conv_x)
+            relu_conv_x = relu(x)
             # Pool 1
             pool_relu_conv_x = pool2x2(relu_conv_x)
             # Flatten 1
@@ -609,19 +639,20 @@ def train_cnn(mini_batches_x, mini_batches_y):
 
             # Back prop
             # FC 1
-            dl_dy, dl_dw_fc, dl_db_fc = fc_backward(dl_dy, flatten_pool_relu_conv_x, w_fc, b_fc, fc_flatten_pool_relu_conv_x)
+            dl_dy, dl_dw_fc, dl_db_fc = fc_backward(dl_dy, flatten_pool_relu_conv_x, w_fc, b_fc,
+                                                    fc_flatten_pool_relu_conv_x)
             # Flatten 1
             dl_dy = flattening_backward(dl_dy, pool_relu_conv_x, flatten_pool_relu_conv_x)
             # Pool 1
             dl_dy = pool2x2_backward(dl_dy, relu_conv_x, pool_relu_conv_x)
             # ReLu 1
-            dl_dy = relu_backward(dl_dy, conv_x, relu_conv_x)
-            # Conv 1
-            dl_dw_conv, dl_db_conv = conv_backward(dl_dy, x, w_conv, b_conv, conv_x)
+            dl_dy = relu_backward(dl_dy, x, relu_conv_x)
+            # # Conv 1
+            # dl_dw_conv, dl_db_conv = conv_backward(dl_dy, x, w_conv, b_conv, conv_x)
 
             # Sum gradients
-            mini_batch_dl_dw_conv += dl_dw_conv
-            mini_batch_dl_db_conv += dl_db_conv
+            # mini_batch_dl_dw_conv += dl_dw_conv
+            # mini_batch_dl_db_conv += dl_db_conv
             mini_batch_dl_dw_fc += dl_dw_fc
             mini_batch_dl_db_fc += dl_db_fc
 
