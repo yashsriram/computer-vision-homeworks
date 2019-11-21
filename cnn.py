@@ -459,7 +459,7 @@ def train_mlp(mini_batches_x, mini_batches_y):
     return w1, b1, w2, b2
 
 
-def train_cnn(mini_batches_x, mini_batches_y):
+def train_cnn(mini_batches_x, mini_batches_y, im_test, label_test):
     # Constant hyper-parameters
     W_CONV_SHAPE = (3, 3, 1, 3)
     B_CONV_SHAPE = 3
@@ -469,10 +469,11 @@ def train_cnn(mini_batches_x, mini_batches_y):
     # Tunable hyper-parameters
     global RELU_E
     RELU_E = 0.5
-    LEARNING_RATE = 0.0001
+    LEARNING_RATE = 0.0006
     DECAY_RATE = 0.9
     DECAY_PER_NUM_ITER = 1000
     NUM_ITERATIONS = 2000
+    TEST_ITER = 500
     print('CNN config: '
           'LEARNING_RATE = {}, '
           'DECAY_RATE = {}, '
@@ -483,7 +484,8 @@ def train_cnn(mini_batches_x, mini_batches_y):
           'B_CONV_SHAPE = {} '
           'OUTPUT_SIZE = {} '
           'PEN_ULTIMATE_SIZE = {} '
-          'INPUT_SIZE = {} '.format(LEARNING_RATE,
+          'INPUT_SIZE = {} '
+          'TEST_ITER = {} '.format(LEARNING_RATE,
                                    DECAY_RATE,
                                    DECAY_PER_NUM_ITER,
                                    NUM_ITERATIONS,
@@ -492,7 +494,8 @@ def train_cnn(mini_batches_x, mini_batches_y):
                                    B_CONV_SHAPE,
                                    OUTPUT_SIZE,
                                    PEN_ULTIMATE_SIZE,
-                                   INPUT_SIZE))
+                                   INPUT_SIZE,
+                                   TEST_ITER))
     w_conv = np.random.normal(0, 1, size=W_CONV_SHAPE)
     b_conv = np.random.normal(0, 1, size=B_CONV_SHAPE)
     w_fc = np.random.normal(0, 1, size=(OUTPUT_SIZE, PEN_ULTIMATE_SIZE))
@@ -502,6 +505,26 @@ def train_cnn(mini_batches_x, mini_batches_y):
     for iter_i in range(NUM_ITERATIONS):
         if (iter_i + 1) % DECAY_PER_NUM_ITER == 0:
             LEARNING_RATE = LEARNING_RATE * DECAY_RATE
+        if (iter_i + 1) % TEST_ITER == 0:
+            acc = 0
+            confusion = np.zeros((10, 10))
+            num_test = im_test.shape[1]
+            print()
+            for i in range(num_test):
+                print('Test # {}/{}: \r'.format(i + 1, num_test), end='')
+                x = im_test[:, [i]].reshape((14, 14, 1), order='F')
+                pred1 = conv(x, w_conv, b_conv)  # (14, 14, 3)
+                pred2 = relu(pred1)  # (14, 14, 3)
+                pred3 = pool2x2(pred2)  # (7, 7, 3)
+                pred4 = flattening(pred3)  # (147, 1)
+                y = fc(pred4, w_fc, b_fc)  # (10, 1)
+                l_pred = np.argmax(y)
+                confusion[l_pred, label_test[0, i]] = confusion[l_pred, label_test[0, i]] + 1
+                if l_pred == label_test[0, i]:
+                    acc = acc + 1
+            accuracy = acc / num_test
+            print()
+            print(accuracy)
 
         # Determining current mini-batch
         curr_mini_batch_x = mini_batches_x[iter_i % num_mini_batches]
