@@ -137,7 +137,9 @@ def main_cnn():
     # print(dl_db)
     # exit(-1)
     mini_batches_x, mini_batches_y = get_mini_batch(im_train, label_train, batch_size)
-    w_conv, b_conv, w_fc, b_fc = train_cnn(mini_batches_x, mini_batches_y, im_test, label_test)
+    w_conv, b_conv, w_fc, b_fc = train_cnn(mini_batches_x, mini_batches_y
+                                           # , im_test, label_test
+                                           )
     sio.savemat('cnn.mat', mdict={'w_conv': w_conv, 'b_conv': b_conv, 'w_fc': w_fc, 'b_fc': b_fc})
     # could use following two lines to replace above two lines if only want to check results
     # data = sio.loadmat('cnn.mat')
