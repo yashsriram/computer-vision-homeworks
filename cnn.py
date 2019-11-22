@@ -460,7 +460,7 @@ def train_mlp(mini_batches_x, mini_batches_y):
 
 
 def train_cnn(mini_batches_x, mini_batches_y
-              #, im_test, label_test
+              # , im_test, label_test
               ):
     # Constant hyper-parameters
     W_CONV_SHAPE = (3, 3, 1, 3)
@@ -471,10 +471,10 @@ def train_cnn(mini_batches_x, mini_batches_y
     # Tunable hyper-parameters
     global RELU_E
     RELU_E = 0.5
-    LEARNING_RATE = 0.0006
-    NUM_ITERATIONS = 2000
-    DECAY_RATE = 0.9
-    DECAY_PER_NUM_ITER = 1000
+    LEARNING_RATE = 0.002
+    NUM_ITERATIONS = 7500
+    DECAY_RATE = 0.6
+    DECAY_PER_NUM_ITER = 500
     TEST_ITER = 500
     CONFIG = 'CNN config: (LEARNING_RATE, DECAY_RATE, DECAY_PER_NUM_ITER, NUM_ITERATIONS, RELU_E, W_CONV_SHAPE, B_CONV_SHAPE, OUTPUT_SIZE, PEN_ULTIMATE_SIZE, INPUT_SIZE, TEST_ITER) = ({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})'.format(
         LEARNING_RATE,
@@ -584,6 +584,7 @@ def train_cnn(mini_batches_x, mini_batches_y
     plt.show()
 
     return w_conv, b_conv, w_fc, b_fc
+
 
 if __name__ == '__main__':
     np.random.seed(42)

@@ -1,4 +1,4 @@
-- [ ] check final mat files with code
-- [ ] update latest params and description in readme
-- [ ] check losses and conf matrices are corresponding to best
-- [ ] rerun the code after submitting to cross check
+- [x] check final mat files with code
+- [x] update latest params and description in readme
+- [x] check losses and conf matrices are corresponding to best
+- [x] rerun the code after submitting to cross check
