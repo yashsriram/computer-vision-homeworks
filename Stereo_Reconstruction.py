@@ -7,10 +7,59 @@ import sys
 from sklearn.neighbors import NearestNeighbors
 from mpl_toolkits.mplot3d import Axes3D
 
+NN_RATIO = 0.7
+
+def find_match_from_template_to_target(_template, _target):
+    # SIFT features (descriptors) extraction
+    sift = cv2.xfeatures2d.SIFT_create()
+    template_kps, template_descriptors = sift.detectAndCompute(_template, None)
+    target_kps, target_descriptors = sift.detectAndCompute(_target, None)
+    # Nearest neighbour matching
+    model = NearestNeighbors(n_neighbors=2).fit(target_descriptors)
+    distances, indices = model.kneighbors(template_descriptors)
+    # Ratio culling
+    x1, x2, x1_all, x2_all = [], [], [], []
+    # For each kp in img1 if nearest neighbour distance ratio < NN_RATIO
+    for i in range(len(template_kps)):
+        point1 = template_kps[i].pt
+        point2 = target_kps[indices[i][0]].pt
+        d1, d2 = distances[i]
+        if (d1 / d2) <= NN_RATIO:
+            x1.append(point1)
+            x2.append(point2)
+        x1_all.append(point1)
+        x2_all.append(point2)
+
+    x1, x2, x1_all, x2_all = np.asarray(x1), np.asarray(x2), np.asarray(x1_all), np.asarray(x2_all)
+
+    print('{} SIFT feature matches'.format(len(x1_all)))
+    visualize_find_match(_target, _template, x1_all, x2_all)
+    print('{} SIFT feature matches with filtering ratio {}'.format(len(x1), NN_RATIO))
+    return x1, x2
+
 
 def find_match(img1, img2):
-    # TO DO
-    return pts1, pts2
+    x1_forward, x2_forward = find_match_from_template_to_target(img1, img2)
+    visualize_find_match(img1, img2, x1_forward, x2_forward)
+    x2_backward, x1_backward = find_match_from_template_to_target(img2, img1)
+    visualize_find_match(img1, img2, x1_backward, x2_backward)
+    forward_dict = {}
+    for x1, x2 in zip(x1_forward, x2_forward):
+        forward_dict[tuple(x1)] = tuple(x2)
+    backward_dict = {}
+    for x1, x2 in zip(x1_backward, x2_backward):
+        backward_dict[tuple(x2)] = tuple(x1)
+    x1_final, x2_final = [], []
+    for x1, x2 in zip(x1_forward, x2_forward):
+        try:
+            if backward_dict[forward_dict[tuple(x1)]] == tuple(x1):
+                x1_final.append(x1)
+                x2_final.append(x2)
+        except KeyError:
+            pass
+    x1_final, x2_final = np.asarray(x1_final), np.asarray(x2_final)
+    print('{} SIFT feature matches with bi-directional consistency check'.format(len(x1_final)))
+    return x1_final, x2_final
 
 
 def compute_F(pts1, pts2):
