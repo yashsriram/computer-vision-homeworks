@@ -8,6 +8,8 @@ from sklearn.neighbors import NearestNeighbors
 from mpl_toolkits.mplot3d import Axes3D
 
 NN_RATIO = 0.7
+RANSAC_N = 1000
+
 
 def find_match_from_template_to_target(_template, _target):
     # SIFT features (descriptors) extraction
@@ -33,16 +35,16 @@ def find_match_from_template_to_target(_template, _target):
     x1, x2, x1_all, x2_all = np.asarray(x1), np.asarray(x2), np.asarray(x1_all), np.asarray(x2_all)
 
     print('{} SIFT feature matches'.format(len(x1_all)))
-    visualize_find_match(_target, _template, x1_all, x2_all)
+    # visualize_find_match(_target, _template, x1_all, x2_all)
     print('{} SIFT feature matches with filtering ratio {}'.format(len(x1), NN_RATIO))
     return x1, x2
 
 
 def find_match(img1, img2):
     x1_forward, x2_forward = find_match_from_template_to_target(img1, img2)
-    visualize_find_match(img1, img2, x1_forward, x2_forward)
+    # visualize_find_match(img1, img2, x1_forward, x2_forward)
     x2_backward, x1_backward = find_match_from_template_to_target(img2, img1)
-    visualize_find_match(img1, img2, x1_backward, x2_backward)
+    # visualize_find_match(img1, img2, x1_backward, x2_backward)
     forward_dict = {}
     for x1, x2 in zip(x1_forward, x2_forward):
         forward_dict[tuple(x1)] = tuple(x2)
@@ -62,9 +64,72 @@ def find_match(img1, img2):
     return x1_final, x2_final
 
 
-def compute_F(pts1, pts2):
-    # TO DO
+def compute_F_by_8_point_algo(pts1, pts2):
+    assert pts1.shape == pts2.shape == (8, 2)
+    A = np.zeros((8, 9))
+    for i, (u, v) in enumerate(zip(pts1, pts2)):
+        # print(i, u, v)
+        A[i, 0] = u[0] * v[0]
+        A[i, 1] = u[1] * v[0]
+        A[i, 2] = v[0]
+        A[i, 3] = u[0] * v[1]
+        A[i, 4] = u[1] * v[1]
+        A[i, 5] = v[1]
+        A[i, 6] = u[0]
+        A[i, 7] = u[1]
+        A[i, 8] = 1
+    F = null_space(A)
+    # Take only the first solution to null space
+    F = F[:, 0]
+    F = F.reshape(3, 3)
     return F
+
+
+def do_svd_cleapup(F_tentative):
+    # Decompose
+    u, d, vt = np.linalg.svd(F_tentative)
+    # print(u.shape, d.shape, vt.shape)
+    # Cleanup step to make rank == 2
+    d[2] = 0
+    # Re-construct back
+    F_cleaned = np.dot(u * d, vt)
+    return F_cleaned
+
+
+def compute_RANSAC_loss(pts1, pts2, F_cleaned):
+    loss = []
+    for pt1, pt2 in zip(pts1, pts2):
+        u = np.asarray([pt1[0], pt1[1], 1])
+        v = np.asarray([pt2[0], pt2[1], 1])
+        per_point_loss = np.dot(np.matmul(v, F_cleaned), u)
+        # print(v, F_cleaned, u, per_point_loss)
+        loss.append(per_point_loss)
+    loss = np.asarray(loss)
+    loss = np.sum(loss ** 2)
+    return loss
+
+
+def compute_F(pts1, pts2):
+    assert pts1.shape == pts2.shape
+    n, _ = pts1.shape
+    indices = np.arange(n)
+    min_loss = None
+    best_F = None
+    for _ in range(RANSAC_N):
+        np.random.shuffle(indices)
+        first_eight_indices = indices[:8]
+        # Compute tentative F using null space of 8 points matrix
+        F_tentative = compute_F_by_8_point_algo(pts1[first_eight_indices], pts2[first_eight_indices])
+        # Do SVD cleanup
+        F_cleaned = do_svd_cleapup(F_tentative)
+        # Compute loss
+        loss = compute_RANSAC_loss(pts1, pts2, F_cleaned)
+        # print(loss)
+        if min_loss is None or loss < min_loss:
+            min_loss = loss
+            best_F = F_cleaned
+    print(min_loss, best_F)
+    return best_F
 
 
 def triangulation(P1, P2, pts1, pts2):
@@ -242,6 +307,8 @@ def visualize_disparity_map(disparity):
 
 
 if __name__ == '__main__':
+    np.random.seed(42)
+
     # read in left and right images as RGB images
     img_left = cv2.imread('./left.bmp', 1)
     img_right = cv2.imread('./right.bmp', 1)
