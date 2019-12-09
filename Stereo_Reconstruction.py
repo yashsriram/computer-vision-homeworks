@@ -163,9 +163,22 @@ def triangulation(P1, P2, pts1, pts2):
     return pts3D
 
 
-def disambiguate_pose(Rs, Cs, pts3Ds):
-    # TO DO
-    return R, C, pts3D
+def disambiguate_pose(Rs, Cs, points_3D_sets):
+    best_i = 0
+    bestValid = 0
+    for i, (r, c, points_3D_set) in enumerate(zip(Rs, Cs, points_3D_sets)):
+        numValid = 0
+        c = c.reshape(-1)
+        r3 = r[2, :]
+        for x in points_3D_set:
+            camera_view_dir_dot_vector_to_point = np.dot(x - c, r3)
+            if camera_view_dir_dot_vector_to_point > 0:
+                # Camera looks towards this point
+                numValid += 1
+        if numValid > bestValid:
+            bestValid = numValid
+            best_i = i
+    return Rs[best_i], Cs[best_i], points_3D_sets[best_i]
 
 
 def compute_rectification(K, R, C):
@@ -293,6 +306,23 @@ def visualize_camera_poses_with_pts(Rs, Cs, pts3Ds):
     plt.show()
 
 
+def visualize_camera_pose_with_pts(R, C, pts3D):
+    fig = plt.figure()
+    R1, C1 = np.eye(3), np.zeros((3, 1))
+    R2, C2 = R, C
+    ax = fig.add_subplot(1, 1, 1, projection='3d')
+    draw_camera(ax, R1, C1, 5)
+    draw_camera(ax, R2, C2, 5)
+    ax.plot(pts3D[:, 0], pts3D[:, 1], pts3D[:, 2], 'b.')
+    set_axes_equal(ax)
+    ax.set_xlabel('x axis')
+    ax.set_ylabel('y axis')
+    ax.set_zlabel('z axis')
+    ax.view_init(azim=-90, elev=0)
+    fig.tight_layout()
+    plt.show()
+
+
 def draw_camera(ax, R, C, scale=0.2):
     axis_end_points = C + scale * R.T  # (3, 3)
     vertices = C + scale * R.T @ np.array([[1, 1, 1], [-1, 1, 1], [-1, -1, 1], [1, -1, 1]]).T  # (3, 4)
@@ -364,6 +394,7 @@ if __name__ == '__main__':
 
     # Step 5: disambiguate camera poses
     R, C, pts3D = disambiguate_pose(Rs, Cs, pts3Ds)
+    visualize_camera_pose_with_pts(R, C, pts3D)
 
     # Step 6: rectification
     H1, H2 = compute_rectification(K, R, C)
