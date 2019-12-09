@@ -183,7 +183,22 @@ def disambiguate_pose(Rs, Cs, points_3D_sets):
 
 
 def compute_rectification(K, R, C):
-    # TO DO
+    C1 = np.zeros(3)
+    R1 = np.identity(3)
+    C2 = C.reshape(-1)
+    R2 = R
+    RrectX = C2 / np.linalg.norm(C2)
+    R1Z = R1[2, :]
+    RrectZ = R1Z - RrectX * np.dot(R1Z, RrectX)
+    RrectZ = RrectZ / np.linalg.norm(RrectZ)
+    RrectY = np.cross(RrectZ, RrectX)
+    Rrect = np.asarray([
+        RrectX,
+        RrectY,
+        RrectZ
+    ])
+    H1 = K @ Rrect @ np.linalg.inv(K)
+    H2 = K @ Rrect @ R2.T @ np.linalg.inv(K)
     return H1, H2
 
 
@@ -391,7 +406,7 @@ if __name__ == '__main__':
         P2 = K @ np.hstack((Rs[i], -Rs[i] @ Cs[i]))
         pts3D = triangulation(P1, P2, pts1, pts2)
         pts3Ds.append(pts3D)
-    visualize_camera_poses_with_pts(Rs, Cs, pts3Ds)
+    # visualize_camera_poses_with_pts(Rs, Cs, pts3Ds)
 
     # Step 5: disambiguate camera poses
     R, C, pts3D = disambiguate_pose(Rs, Cs, pts3Ds)
