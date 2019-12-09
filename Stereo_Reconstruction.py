@@ -171,9 +171,10 @@ def disambiguate_pose(Rs, Cs, points_3D_sets):
         c = c.reshape(-1)
         r3 = r[2, :]
         for x in points_3D_set:
-            camera_view_dir_dot_vector_to_point = np.dot(x - c, r3)
-            if camera_view_dir_dot_vector_to_point > 0:
-                # Camera looks towards this point
+            camera1_view_dir_dot_vector_to_point = (x - c)[2]
+            camera2_view_dir_dot_vector_to_point = np.dot(x - c, r3)
+            if camera1_view_dir_dot_vector_to_point > 0 and camera2_view_dir_dot_vector_to_point > 0:
+                # Both cameras looks towards this point
                 numValid += 1
         if numValid > bestValid:
             bestValid = numValid
