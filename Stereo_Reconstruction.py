@@ -144,6 +144,7 @@ def make_skew_symmetric_matrix(vec3d):
 
 
 def triangulation(P1, P2, pts1, pts2):
+    pts3D = []
     for pt1, pt2 in zip(pts1, pts2):
         pt1_3d = list(pt1) + [1]
         pt2_3d = list(pt2) + [1]
@@ -152,11 +153,13 @@ def triangulation(P1, P2, pts1, pts2):
         pt1_cross_P1 = pt1_skew_symmteric @ P1
         pt2_cross_P2 = pt2_skew_symmteric @ P2
         A = np.vstack((pt1_cross_P1[:2], pt2_cross_P2[:2]))
-        print(A)
-        print(A.shape)
-        X = null_space(A)
-        print(X.shape)
-        print(X)
+        X = null_space(A, rcond=1e-1)
+        # Take the first null space entry
+        X = X[:, 0]
+        # Divide by w
+        X = X / X[3]
+        pts3D.append(X[:3])
+    pts3D = np.asarray(pts3D)
     return pts3D
 
 
@@ -335,20 +338,20 @@ if __name__ == '__main__':
     # read in left and right images as RGB images
     img_left = cv2.imread('./left.bmp', 1)
     img_right = cv2.imread('./right.bmp', 1)
-    visualize_img_pair(img_left, img_right)
+    # visualize_img_pair(img_left, img_right)
 
     # Step 1: find correspondences between image pair
     pts1, pts2 = find_match(img_left, img_right)
-    visualize_find_match(img_left, img_right, pts1, pts2)
+    # visualize_find_match(img_left, img_right, pts1, pts2)
 
     # Step 2: compute fundamental matrix
     F = compute_F(pts1, pts2)
-    visualize_epipolar_lines(F, pts1, pts2, img_left, img_right)
+    # visualize_epipolar_lines(F, pts1, pts2, img_left, img_right)
 
     # Step 3: computes four sets of camera poses
     K = np.array([[350, 0, 960 / 2], [0, 350, 540 / 2], [0, 0, 1]])
     Rs, Cs = compute_camera_pose(F, K)
-    visualize_camera_poses(Rs, Cs)
+    # visualize_camera_poses(Rs, Cs)
 
     # Step 4: triangulation
     pts3Ds = []
