@@ -201,9 +201,38 @@ def compute_rectification(K, R, C):
     H2 = K @ Rrect @ R2.T @ np.linalg.inv(K)
     return H1, H2
 
+def compute_dsift(img, size=10):
+    sift = cv2.xfeatures2d.SIFT_create()
+    r, c = img.shape
+    dense_feature = np.zeros((r, c, 128))
+    for i in range(r):
+        for j in range(c):
+            kps, descriptors = sift.compute(img, [cv2.KeyPoint(x=j, y=i, _size=size)])
+            if len(descriptors) > 0:
+                dense_feature[i, j] = descriptors[0].reshape(-1)
+    return dense_feature
 
 def dense_match(img1, img2):
-    # TO DO
+    print(img1.shape)
+    print(img2.shape)
+    dense_feature1 = compute_dsift(img1)
+    dense_feature2 = compute_dsift(img2)
+    np.save('dense_feature1.mat', dense_feature1)
+    np.save('dense_feature2.mat', dense_feature2)
+    print('Dense feature calculated')
+    r, c = img1.shape
+    disparity = np.zeros(img1.shape)
+    for i in range(r):
+        for j in range(c):
+            d1_d2_dists = []
+            d1 = dense_feature1[i, j]
+            for k in range(j, c):
+                d2 = dense_feature2[i, k]
+                d1_d2_dists.append(np.linalg.norm(d1 - d2))
+            disparity[i, j] = np.argmin(d1_d2_dists)
+
+    np.save('disparity.mat', disparity)
+
     return disparity
 
 
@@ -410,13 +439,13 @@ if __name__ == '__main__':
 
     # Step 5: disambiguate camera poses
     R, C, pts3D = disambiguate_pose(Rs, Cs, pts3Ds)
-    visualize_camera_pose_with_pts(R, C, pts3D)
+    # visualize_camera_pose_with_pts(R, C, pts3D)
 
     # Step 6: rectification
     H1, H2 = compute_rectification(K, R, C)
     img_left_w = cv2.warpPerspective(img_left, H1, (img_left.shape[1], img_left.shape[0]))
     img_right_w = cv2.warpPerspective(img_right, H2, (img_right.shape[1], img_right.shape[0]))
-    visualize_img_pair(img_left_w, img_right_w)
+    # visualize_img_pair(img_left_w, img_right_w)
 
     # Step 7: generate disparity map
     img_left_w = cv2.resize(img_left_w,
