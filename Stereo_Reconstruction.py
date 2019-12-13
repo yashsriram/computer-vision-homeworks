@@ -416,20 +416,20 @@ if __name__ == '__main__':
     # read in left and right images as RGB images
     img_left = cv2.imread('./left.bmp', 1)
     img_right = cv2.imread('./right.bmp', 1)
-    # visualize_img_pair(img_left, img_right)
+    visualize_img_pair(img_left, img_right)
 
     # Step 1: find correspondences between image pair
     pts1, pts2 = find_match(img_left, img_right)
-    # visualize_find_match(img_left, img_right, pts1, pts2)
+    visualize_find_match(img_left, img_right, pts1, pts2)
 
     # Step 2: compute fundamental matrix
     F = compute_F(pts1, pts2)
-    # visualize_epipolar_lines(F, pts1, pts2, img_left, img_right)
+    visualize_epipolar_lines(F, pts1, pts2, img_left, img_right)
 
     # Step 3: computes four sets of camera poses
     K = np.array([[350, 0, 960 / 2], [0, 350, 540 / 2], [0, 0, 1]])
     Rs, Cs = compute_camera_pose(F, K)
-    # visualize_camera_poses(Rs, Cs)
+    visualize_camera_poses(Rs, Cs)
 
     # Step 4: triangulation
     pts3Ds = []
@@ -438,17 +438,17 @@ if __name__ == '__main__':
         P2 = K @ np.hstack((Rs[i], -Rs[i] @ Cs[i]))
         pts3D = triangulation(P1, P2, pts1, pts2)
         pts3Ds.append(pts3D)
-    # visualize_camera_poses_with_pts(Rs, Cs, pts3Ds)
+    visualize_camera_poses_with_pts(Rs, Cs, pts3Ds)
 
     # Step 5: disambiguate camera poses
     R, C, pts3D = disambiguate_pose(Rs, Cs, pts3Ds)
-    # visualize_camera_pose_with_pts(R, C, pts3D)
+    visualize_camera_pose_with_pts(R, C, pts3D)
 
     # Step 6: rectification
     H1, H2 = compute_rectification(K, R, C)
     img_left_w = cv2.warpPerspective(img_left, H1, (img_left.shape[1], img_left.shape[0]))
     img_right_w = cv2.warpPerspective(img_right, H2, (img_right.shape[1], img_right.shape[0]))
-    # visualize_img_pair(img_left_w, img_right_w)
+    visualize_img_pair(img_left_w, img_right_w)
 
     # plt.imshow(cv2.cvtColor(img_left_w, cv2.COLOR_BGR2RGB))
     # plt.show()
