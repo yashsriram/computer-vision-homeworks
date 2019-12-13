@@ -9,7 +9,7 @@ from mpl_toolkits.mplot3d import Axes3D
 
 NN_RATIO = 0.7
 RANSAC_N = 1000
-SIFT_SIZE = 11
+SIFT_SIZE = 7
 
 
 def find_match_from_template_to_target(_template, _target):
@@ -231,7 +231,7 @@ def dense_match(img1, img2):
                 continue
             d1_d2_dists = []
             d1 = dense_feature1[i, j]
-            for k in range(0, w):
+            for k in range(0, j + 1):
                 d2 = dense_feature2[i, k]
                 d1_d2_dists.append(np.linalg.norm(d1 - d2))
             disparity[i, j] = np.abs(np.argmin(d1_d2_dists) - j)
@@ -449,6 +449,9 @@ if __name__ == '__main__':
     img_left_w = cv2.warpPerspective(img_left, H1, (img_left.shape[1], img_left.shape[0]))
     img_right_w = cv2.warpPerspective(img_right, H2, (img_right.shape[1], img_right.shape[0]))
     # visualize_img_pair(img_left_w, img_right_w)
+
+    # plt.imshow(cv2.cvtColor(img_left_w, cv2.COLOR_BGR2RGB))
+    # plt.show()
 
     # Step 7: generate disparity map
     img_left_w = cv2.resize(img_left_w,
