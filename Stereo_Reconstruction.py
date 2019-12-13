@@ -9,6 +9,7 @@ from mpl_toolkits.mplot3d import Axes3D
 
 NN_RATIO = 0.7
 RANSAC_N = 1000
+SIFT_SIZE = 11
 
 
 def find_match_from_template_to_target(_template, _target):
@@ -201,38 +202,39 @@ def compute_rectification(K, R, C):
     H2 = K @ Rrect @ R2.T @ np.linalg.inv(K)
     return H1, H2
 
-def compute_dsift(img, size=10):
+
+def compute_dense_sift_repr(img, size):
     sift = cv2.xfeatures2d.SIFT_create()
-    r, c = img.shape
-    dense_feature = np.zeros((r, c, 128))
-    for i in range(r):
-        for j in range(c):
-            kps, descriptors = sift.compute(img, [cv2.KeyPoint(x=j, y=i, _size=size)])
-            if len(descriptors) > 0:
-                dense_feature[i, j] = descriptors[0].reshape(-1)
-    return dense_feature
+    h, w = img.shape
+    keypoints = []
+    for i in range(h):
+        for j in range(w):
+            keypoints.append(cv2.KeyPoint(x=j, y=i, _size=size))
+    keypoints_returned, descriptors = sift.compute(img, keypoints)
+    descriptors = np.asarray(descriptors).reshape((h, w, 128))
+    return descriptors
+
 
 def dense_match(img1, img2):
-    print(img1.shape)
-    print(img2.shape)
-    dense_feature1 = compute_dsift(img1)
-    dense_feature2 = compute_dsift(img2)
-    np.save('dense_feature1.mat', dense_feature1)
-    np.save('dense_feature2.mat', dense_feature2)
-    print('Dense feature calculated')
-    r, c = img1.shape
-    disparity = np.zeros(img1.shape)
-    for i in range(r):
-        for j in range(c):
+    assert img1.shape == img2.shape
+    print('Calculating dense sift features for rectified images of shape {} with sift_size {}'.format(img1.shape,
+                                                                                                      SIFT_SIZE))
+    dense_feature1 = compute_dense_sift_repr(img1, SIFT_SIZE)
+    dense_feature2 = compute_dense_sift_repr(img2, SIFT_SIZE)
+    print('Matching SIFT for every point on its epipolar line i.e. horizontal line'.format(img1.shape))
+    disparity = np.ones(img1.shape)
+    h, w = img1.shape
+
+    for i in range(h):
+        for j in range(0, w):
+            if img1[i, j] == 0:
+                continue
             d1_d2_dists = []
             d1 = dense_feature1[i, j]
-            for k in range(j, c):
+            for k in range(0, w):
                 d2 = dense_feature2[i, k]
                 d1_d2_dists.append(np.linalg.norm(d1 - d2))
-            disparity[i, j] = np.argmin(d1_d2_dists)
-
-    np.save('disparity.mat', disparity)
-
+            disparity[i, j] = np.abs(np.argmin(d1_d2_dists) - j)
     return disparity
 
 
@@ -404,6 +406,7 @@ def set_axes_equal(ax):
 
 def visualize_disparity_map(disparity):
     plt.imshow(disparity, cmap='jet')
+    plt.title('d{}_full'.format(SIFT_SIZE))
     plt.show()
 
 
@@ -453,6 +456,18 @@ if __name__ == '__main__':
     img_right_w = cv2.resize(img_right_w, (int(img_right_w.shape[1] / 2), int(img_right_w.shape[0] / 2)))
     img_left_w = cv2.cvtColor(img_left_w, cv2.COLOR_BGR2GRAY)  # convert to gray scale
     img_right_w = cv2.cvtColor(img_right_w, cv2.COLOR_BGR2GRAY)
+
+    # zero_heat_map = np.zeros(img_left_w.shape)
+    # print(img_left_w.shape)
+    # h, w = img_left_w.shape
+    # for i in range(h):
+    #     for j in range(w):
+    #         if img_left_w[i, j] == 0:
+    #             zero_heat_map[i, j] = 100
+    # plt.imshow(zero_heat_map, cmap='jet')
+    # plt.axis('off')
+    # plt.show()
+
     disparity = dense_match(img_left_w, img_right_w)
     visualize_disparity_map(disparity)
 
