@@ -42,9 +42,11 @@ Problems in `hw2.pdf` are solved.
 ![](./github/1.sift_keypoints.jpg)
 
 - SIFT feature matching.
+
 ![](./github/2.sift_matches.png)
 
 - Project of template on target1 using RANSACed affine transform model.
+
 ![](./github/3.initial_alignment.png)
 
 | Warped target1 image on template domain | Error b/w them |
@@ -52,13 +54,17 @@ Problems in `hw2.pdf` are solved.
 | ![](./github/3.initial_warp.png) | ![](./github/3.initial_warp_diff.png) |
 
 - Steepest descent matrix visualization.
+
 ![](./github/4.steepest_descent_images.png)
 
 - Refinement of inverse compositional alignment.
+
 ![](./github/5.ica_200_refinement.png)
 
 - Error vs iteration during inverse compositional alignment.
+
 ![](./github/6.ica_200_error.png)
 
 - Alignment repeated for multiple target images in order.
+
 ![](./github/7.final.png)
