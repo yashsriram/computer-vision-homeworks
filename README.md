@@ -5,10 +5,10 @@
 - Uses SIFT/RANSAC based initialization and inverse compositional alignment based refinement.
 
 ## roadmap
-- [x] `find\_match`
+- [x] `find_match`
     - [x] template -> target ?
     - [x] Any bi-directional consistency checks needed ?
-- [x] cross check correctness of `align\_image\_with\_feature`
+- [x] cross check correctness of `align_image_with_feature`
 - [x] inverse compositional warp
 - [x] report
 - [x] bilinear interpolate
@@ -38,6 +38,7 @@ Problems in `hw2.pdf` are solved.
 - The pipeline is illustrated below.
 
 - SIFT feature extraction.
+
 ![](./github/1.sift_keypoints.jpg)
 
 - SIFT feature matching.
@@ -56,7 +57,7 @@ Problems in `hw2.pdf` are solved.
 - Refinement of inverse compositional alignment.
 ![](./github/5.ica_200_refinement.png)
 
-- Error of inverse compositional alignment.
+- Error vs iteration during inverse compositional alignment.
 ![](./github/6.ica_200_error.png)
 
 - Alignment repeated for multiple target images in order.
