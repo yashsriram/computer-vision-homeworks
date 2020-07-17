@@ -7,7 +7,7 @@ from scipy import interpolate
 import math
 
 NN_RATIO = 0.7
-NUM_IAC_ITER = 125
+NUM_IAC_ITER = 200
 ransac_thr = 10
 ransac_iter = 1000
 RANDOM_SEED = 42
@@ -92,6 +92,7 @@ def warp_image(img, A, output_size):
     for ri in range(r):
         for ci in range(c):
             point_on_img = np.matmul(A, np.asarray([ci, ri, 1]))
+            # bi-linear interpolation
             _X = np.array([math.ceil(point_on_img[0]) - point_on_img[0], point_on_img[0] - math.floor(point_on_img[0])])
             _M = np.array([
                 [img[math.floor(point_on_img[1]), math.floor(point_on_img[0])],
@@ -199,8 +200,8 @@ def align_image(template, target, A):
     # Refining warp function (here affine transform)
     refined_A = A
     error_norms = []
-    num_iterations = 0
-    while True:
+    print('Refining warp')
+    for num_iterations in range(NUM_IAC_ITER):
         target_warped = warp_image(target, refined_A, template.shape)
         Ierr = target_warped - template
         error_norm = np.sqrt(np.sum(Ierr ** 2))
@@ -211,9 +212,8 @@ def align_image(template, target, A):
                 F += (np.transpose(steepest_descent_images[ri, ci]) * Ierr[ri, ci]).reshape(6, 1)
         dell_p = np.matmul(hessian_inv, F)
         refined_A = np.matmul(refined_A, np.linalg.inv(get_affine_transform(dell_p)))
-        print('Refining warp, iteration = {}, error_norm = {}'.format(num_iterations, error_norm))
-        num_iterations += 1
-        if num_iterations > NUM_IAC_ITER or error_norm < 1e3:
+        print('iteration = {}, error_norm = {}'.format(num_iterations, error_norm))
+        if error_norm < 1e3:
             break
     return refined_A, np.array(error_norms)
 
@@ -361,10 +361,10 @@ if __name__ == '__main__':
     print('Random seed = {}'.format(RANDOM_SEED))
     np.random.seed(RANDOM_SEED)
 
-    template = cv2.imread('./Hyun_Soo_template.jpg', 0)  # read as grey scale image
+    template = cv2.imread('./template.jpg', 0)  # read as grey scale image
     target_list = []
     for i in range(4):
-        target = cv2.imread('./Hyun_Soo_target{}.jpg'.format(i + 1), 0)  # read as grey scale image
+        target = cv2.imread('./target{}.jpg'.format(i + 1), 0)  # read as grey scale image
         target_list.append(target)
 
     # x1, x2 = find_match(template, target_list[0])
