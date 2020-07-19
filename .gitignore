@@ -1,6 +1,5 @@
-test
-test.txt
-train
-train.txt
-scene_classification_data.zip
 .idea
+train_bows.txt
+test_bows.txt
+vocab.txt
+scene_classification_data
