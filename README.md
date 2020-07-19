@@ -68,3 +68,19 @@ Problems in `hw2.pdf` are solved.
 - Alignment repeated for multiple target images in order.
 
 ![](./github/7.final.png)
+
+### importance of bi-linear interpolation
+| without | with |
+| --- | --- |
+| ![](./github/5.ica_200_without_bi_refinement.png) | ![](./github/5.ica_200_refinement.png) |
+| ![](./github/6.ica_200_without_bi_error.png) | ![](./github/6.ica_200_error.png) |
+| ![](./github/8.warp.png) | ![] (./github/8.warp_bi.png) |
+
+### parameter tuning
+| parameters | result |
+| --- | --- |
+| #iac\_iter = 75, bilinear=false | ![](./github/9.multi_75.png) |
+| #iac\_iter = 75, bilinear=true | ![](./github/9.multi_75_bi_linear.png) |
+| #iac\_iter = 100, bilinear=false | ![](./github/9.multi_100.png) |
+| #iac\_iter = 125, bilinear=true | ![](./github/9.multi_125_bi_linear.png) |
+| #iac\_iter = 200, bilinear=true | ![](./github/9.multi_200_bi_linear.png) |
