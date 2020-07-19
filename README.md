@@ -14,7 +14,7 @@ Problems in `hw3.pdf` are solved.
 
 ## code
 - All source code is in `scene_recognition.py`.
-- Data (as zip file) is available here TODO.
+- Data (as zip file) is available ![here](https://drive.google.com/file/d/19W2wTyEZm3LFg3ZZuegVtlEpifvarT70/view?usp=sharing).
 - Unzip it at project root.
 - Description of data format is given in `hw3.pdf`.
 
