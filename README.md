@@ -1,4 +1,4 @@
-# histogram-of-oriented-gradients-descriptor
+# image-description
 
 ## description
 - A simple histogram-of-oriented-gradients-descriptor extractor.
