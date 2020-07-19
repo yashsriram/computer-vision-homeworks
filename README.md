@@ -1,13 +1,14 @@
-# image-recognition
+# shallow-image-classification
 
 ## description
-- A simple image classification task implementation.
+- A simple image classification implementation, where description and classification are done seperately.
 - Descriptions used
     - tiny image (tiny).
     - bag of visual words (bow).
 - Classifiers used
     - k nearest neighbour (knn).
     - support vector (svc).
+- This is unlike a deep\[-neural-network\] classification, where description and classification are done together.
 
 ## roadmap
 Problems in `hw3.pdf` are solved.
