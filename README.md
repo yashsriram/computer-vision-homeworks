@@ -74,13 +74,13 @@ Problems in `hw2.pdf` are solved.
 | --- | --- |
 | ![](./github/5.ica_200_without_bi_refinement.png) | ![](./github/5.ica_200_refinement.png) |
 | ![](./github/6.ica_200_without_bi_error.png) | ![](./github/6.ica_200_error.png) |
-| ![](./github/8.warp.png) | ![] (./github/8.warp_bi.png) |
+| ![](./github/8.warp.png) | ![](./github/8.warp_bi.png) |
 
 ### parameter tuning
 | parameters | result |
 | --- | --- |
-| #iac\_iter = 75, bilinear=false | ![](./github/9.multi_75.png) |
-| #iac\_iter = 75, bilinear=true | ![](./github/9.multi_75_bi_linear.png) |
-| #iac\_iter = 100, bilinear=false | ![](./github/9.multi_100.png) |
-| #iac\_iter = 125, bilinear=true | ![](./github/9.multi_125_bi_linear.png) |
-| #iac\_iter = 200, bilinear=true | ![](./github/9.multi_200_bi_linear.png) |
+| #iac\_iter=75, bilinear=false | ![](./github/9.multi_75.png) |
+| #iac\_iter=75, bilinear=true | ![](./github/9.multi_75_bi_linear.png) |
+| #iac\_iter=100, bilinear=false | ![](./github/9.multi_100.png) |
+| #iac\_iter=125, bilinear=true | ![](./github/9.multi_125_bi_linear.png) |
+| #iac\_iter=200, bilinear=true | ![](./github/9.multi_200_bi_linear.png) |
