@@ -49,12 +49,12 @@ The pipeline is demonstrated below.
 - Rectified images.
 ![](./github/7.rectified_images.png)
 
-- Disparity map.
+- Disparity map (red=nearer, blue=farther to the camera).
 ![](./github/8.dispariy.png)
 
-- Disparity map vs SIFT size.
+- Disparity map vs SIFT size (red=nearer, blue=farther to the camera).
 ![](./github/comparision/disparity.gif)
 
-- Disparity map over rectified left image vs SIFT size.
+- Disparity map over rectified left image vs SIFT size (red=nearer, blue=farther to the camera).
 ![](./github/comparision/blend.gif)
 
