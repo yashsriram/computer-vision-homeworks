@@ -1,7 +1,7 @@
 # image-epipolar-geometry
 
 ## description
-- Calculating disparity (and thus depth of the scene) using two (stereo) images of a scene.
+- Calculating disparity (and thus depth of the scene) using two images of a scene.
 - Sort of what eyes do all the time.
 
 ## roadmap
