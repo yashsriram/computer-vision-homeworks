@@ -16,6 +16,7 @@ Problems in `hw4.pdf` are solved.
 - All source code is in `cnn.py` & `main_functions.py`. Ironically `cnn.py` is the main file.
 - `main_functions.py` reads `mnist_train.mat` & `mnist_test.mat`.
 - Description of data format is given in `hw4.pdf`.
+- `comps` contains results of models for different hyper parameters. It mainly serves as an example of how NOT to do a hyper parameter search :)
 
 ## documentation
 - Code is the documentation of itself.
@@ -48,5 +49,3 @@ Problems in `hw4.pdf` are solved.
 ![](./github/cnn_ep.png)
 
 ![](./github/cnn_cm.png)
-
-
