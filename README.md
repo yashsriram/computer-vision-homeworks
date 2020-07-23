@@ -21,6 +21,12 @@ Problems in `hw5.pdf` are solved.
 ## demonstration
 The pipeline is demonstrated below.
 
+- Original images.
+
+| left | right |
+| --- | --- |
+| ![](./left.bmp) | ![](./right.bmp) |
+
 - SIFT matches.
 
 | left-to-right | right-to-left |
