@@ -460,7 +460,7 @@ def train_mlp(mini_batches_x, mini_batches_y):
 
 
 def train_cnn(mini_batches_x, mini_batches_y
-              # , im_test, label_test
+              #, im_test, label_test
               ):
     # Constant hyper-parameters
     W_CONV_SHAPE = (3, 3, 1, 3)
@@ -585,10 +585,9 @@ def train_cnn(mini_batches_x, mini_batches_y
 
     return w_conv, b_conv, w_fc, b_fc
 
-
 if __name__ == '__main__':
     np.random.seed(42)
-    # main.main_slp_linear()
-    # main.main_slp()
-    # main.main_mlp()
+    main.main_slp_linear()
+    main.main_slp()
+    main.main_mlp()
     main.main_cnn()

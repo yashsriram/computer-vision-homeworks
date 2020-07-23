@@ -1,6 +1,6 @@
 .idea
 __pycache__
-lr=0.0001
-lr=0.0002
-*mat
-*png
+slp_linear.mat
+slp.mat
+mlp.mat
+cnn.mat
