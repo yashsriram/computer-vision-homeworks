@@ -7,6 +7,7 @@
     - Non-linear single-layer perceptron.
     - Multi-layer perceptron.
     - A pipeline with a convolutional layer.
+- All models, forward and backward propogation steps are implemented from scratch.
 - This is unlike a shallow classification, where description and classification are done separately.
 
 ## roadmap
