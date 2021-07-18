@@ -58,14 +58,14 @@ def compute_dsift(img, stride, size):
     assert size <= img.shape[0] and size <= img.shape[1]
     r = int((img.shape[0] - size) / stride)
     c = int((img.shape[1] - size) / stride)
-    sift = cv2.xfeatures2d.SIFT_create()
+    sift = cv2.SIFT_create()
     dense_feature = []
     for i in range(r):
         for j in range(c):
             patch = img[i * stride: i * stride + size, j * stride: j * stride + size]
             kps, patch_descriptors = sift.compute(
                 img,
-                [cv2.KeyPoint(x=j * stride + size, y=i * stride + size, _size=size)]
+                [cv2.KeyPoint(x=j * stride + size, y=i * stride + size, size=size)]
             )
             for descriptor in patch_descriptors:
                 dense_feature.append(descriptor.reshape(-1))
