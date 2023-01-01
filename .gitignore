@@ -1,0 +1,4 @@
+.idea
+train_bows.txt
+test_bows.txt
+vocab.txt
